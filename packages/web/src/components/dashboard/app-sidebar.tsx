@@ -69,7 +69,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface NavItem {
+export interface NavItem {
   readonly key: string;
   readonly href: string;
   readonly icon: typeof BookOpen;
@@ -86,7 +86,7 @@ const platformItems: readonly NavItem[] = [
   { key: 'tasks', icon: CalendarClock, href: '/tasks' },
 ];
 
-const ngoItems: readonly NavItem[] = [
+export const ngoItems: readonly NavItem[] = [
   { key: 'programs', href: '/ngo/programs', icon: Target },
   { key: 'partners', href: '/ngo/partners', icon: Handshake },
   { key: 'donors', href: '/ngo/donors', icon: Heart },
@@ -118,7 +118,6 @@ const messages = {
   en: {
     brandTagline: 'Gospel Mission AI',
     groupWorkspace: 'Work with Agents',
-    groupNgo: 'Ministry',
     groupGovernance: 'Governance',
     nav: {
       conversations: 'Conversations',
@@ -163,7 +162,6 @@ const messages = {
   'zh-TW': {
     brandTagline: '福音宣教 AI',
     groupWorkspace: '與代理協作',
-    groupNgo: '事工',
     groupGovernance: '治理',
     nav: {
       conversations: '對話',
@@ -208,7 +206,6 @@ const messages = {
 } satisfies Messages<{
   brandTagline: string;
   groupWorkspace: string;
-  groupNgo: string;
   groupGovernance: string;
   nav: Record<string, string>;
   lightMode: string;
@@ -288,29 +285,6 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu>
             {platformItems.map((item) => (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive(item.href)}
-                  tooltip={t.nav[item.key as keyof typeof t.nav]}
-                  className={navButtonClass}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{t.nav[item.key as keyof typeof t.nav]}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-            {t.groupNgo}
-          </SidebarGroupLabel>
-          <SidebarMenu>
-            {ngoItems.map((item) => (
               <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton
                   asChild
