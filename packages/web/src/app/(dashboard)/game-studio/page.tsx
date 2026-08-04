@@ -1,166 +1,94 @@
 'use client';
 
-import { useReducer } from 'react';
-import { ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react';
+import { Gamepad2, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { studioReducer, INITIAL_STATE, type WizardStep } from '@/lib/game-studio/studio-state';
-import { StepIdentity } from '@/components/dashboard/game-studio/StepIdentity';
-import { StepBoard } from '@/components/dashboard/game-studio/StepBoard';
-import { StepCharacters } from '@/components/dashboard/game-studio/StepCharacters';
-import { StepCards } from '@/components/dashboard/game-studio/StepCards';
-import { StepWin } from '@/components/dashboard/game-studio/StepWin';
-import { StepExport } from '@/components/dashboard/game-studio/StepExport';
-import { ComingSoon } from '@/components/dashboard/coming-soon';
+import { useT, type Messages } from '@/lib/i18n';
 
-const STEPS: { id: WizardStep; label: string; icon: string; description: string }[] = [
-  { id: 'identity',   label: 'Identity',   icon: '🎭', description: 'Theme, title & rules' },
-  { id: 'board',      label: 'Board',      icon: '🗺',  description: 'Spaces & scenes' },
-  { id: 'characters', label: 'Characters', icon: '👥', description: 'Player tokens' },
-  { id: 'cards',      label: 'Cards',      icon: '🃏', description: 'Event & effect cards' },
-  { id: 'win',        label: 'Win',        icon: '🏆', description: 'Victory condition' },
-  { id: 'export',     label: 'Export',     icon: '📦', description: 'Preview & download' },
-];
-
-// Flip to true once this wizard is wired to the real game-studio agent's
-// storyboard-approval pipeline (Phase 2) instead of building in-memory only.
-const GAME_STUDIO_ENABLED = false;
+const messages = {
+  en: {
+    title: 'Game Studio',
+    subtitle: 'storyboard · approve · build',
+    description:
+      'Build short, Scripture-rooted narrative games for VBS and youth ministry through a storyboard-first, human-approved pipeline. Spawn the game-studio agent from a conversation — it drafts a storyboard for your review, and only builds after you approve it. Finished games play on the Projector page.',
+    step1: 'Ask for a game',
+    step1Body: 'In a conversation, describe the passage, audience, and length — or use the built-in "Game Builder" suggestion.',
+    step2: 'Review the storyboard',
+    step2Body: 'The agent drafts a scene-by-scene storyboard first. Nothing gets built until you approve it.',
+    step3: 'Play it on Projector',
+    step3Body: 'Once approved, the agent builds the game and it appears on your Projector page, ready to play.',
+    cta: 'Start a conversation',
+  },
+  'zh-TW': {
+    title: '遊戲工坊',
+    subtitle: '故事板 · 核准 · 製作',
+    description:
+      '透過故事板優先、經人核准的流程，為暑期聖經班與青少年事工製作短篇聖經主題敘事遊戲。在對話中啟動 game-studio 代理——它會先產出故事板供您審閱，核准後才開始製作。完成的遊戲會顯示在投影台頁面上供遊玩。',
+    step1: '提出遊戲需求',
+    step1Body: '在對話中描述經文段落、對象與長度——或直接使用內建的「遊戲工坊」建議。',
+    step2: '審閱故事板',
+    step2Body: '代理會先產出逐場景的故事板。在您核准之前不會開始製作。',
+    step3: '於投影台遊玩',
+    step3Body: '核准後，代理會製作遊戲，完成後會顯示在投影台頁面上，即可遊玩。',
+    cta: '開始對話',
+  },
+} satisfies Messages<{
+  title: string;
+  subtitle: string;
+  description: string;
+  step1: string;
+  step1Body: string;
+  step2: string;
+  step2Body: string;
+  step3: string;
+  step3Body: string;
+  cta: string;
+}>;
 
 export default function GameStudioPage() {
-  if (!GAME_STUDIO_ENABLED) {
-    return (
-      <ComingSoon
-        title="Game Studio"
-        description="Build short, Scripture-rooted narrative games for VBS and youth ministry through a storyboard-first, human-approved pipeline."
-        eta="Phase 2"
-      />
-    );
-  }
-  return <GameStudioPageContent />;
-}
-
-function GameStudioPageContent() {
-  const [state, dispatch] = useReducer(studioReducer, INITIAL_STATE);
-
-  const currentIndex = STEPS.findIndex((s) => s.id === state.step);
-  const currentStep = STEPS[currentIndex];
-  const prevStep = STEPS[currentIndex - 1];
-  const nextStep = STEPS[currentIndex + 1];
-
-  const canAdvance =
-    state.step !== 'identity' ||
-    state.title.length > 0;
+  const t = useT(messages);
+  const steps = [
+    { label: t.step1, body: t.step1Body },
+    { label: t.step2, body: t.step2Body },
+    { label: t.step3, body: t.step3Body },
+  ];
 
   return (
-    <div className="flex min-w-0 flex-col gap-0 pb-8">
-      {/* Header */}
-      <div className="sticky top-14 z-20 border-b border-border/60 bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-3 px-6 py-3">
-          <Gamepad2 className="size-5 text-primary" />
-          <div>
-            <h1 className="text-lg font-bold leading-none">Game Studio</h1>
-            <p className="text-xs text-muted-foreground">
-              {state.title || 'Untitled Game'} · Step {currentIndex + 1} of {STEPS.length}
-            </p>
+    <div className="flex min-w-0 flex-col gap-4 p-6">
+      <header className="flex flex-col gap-1 border-b border-border/60 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground/70">
+              {t.subtitle}
+            </span>
           </div>
-        </div>
-
-        {/* Progress stepper */}
-        <div className="flex items-stretch overflow-x-auto border-t border-border/40">
-          {STEPS.map((step, i) => {
-            const done = i < currentIndex;
-            const active = i === currentIndex;
-            return (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => {
-                  if (i <= currentIndex || done) {
-                    dispatch({ type: 'SET_STEP', step: step.id });
-                  }
-                }}
-                className={cn(
-                  'flex flex-1 flex-col items-center gap-0.5 border-b-2 px-3 py-2.5 text-center text-xs transition-all',
-                  active
-                    ? 'border-primary bg-primary/5 font-semibold text-primary'
-                    : done
-                    ? 'border-emerald-400 text-emerald-700 dark:text-emerald-400 hover:bg-muted/50 cursor-pointer'
-                    : 'border-transparent text-muted-foreground cursor-default',
-                )}
-              >
-                <span className="text-base leading-none">{step.icon}</span>
-                <span className="hidden sm:block">{step.label}</span>
-                {done && <span className="hidden sm:block text-[9px]">✓</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Step content */}
-      <div className="px-6 pt-6">
-        {/* Step header */}
-        {currentStep && (
-          <div className="mb-6">
-            <h2 className="text-xl font-bold">
-              {currentStep.icon} {currentStep.label}
-            </h2>
-            <p className="text-sm text-muted-foreground">{currentStep.description}</p>
-          </div>
-        )}
-
-        {/* Step body */}
-        {state.step === 'identity' && <StepIdentity state={state} dispatch={dispatch} />}
-        {state.step === 'board' && <StepBoard state={state} dispatch={dispatch} />}
-        {state.step === 'characters' && <StepCharacters state={state} dispatch={dispatch} />}
-        {state.step === 'cards' && <StepCards state={state} dispatch={dispatch} />}
-        {state.step === 'win' && <StepWin state={state} dispatch={dispatch} />}
-        {state.step === 'export' && <StepExport state={state} />}
-
-        {/* Navigation */}
-        <div className="mt-8 flex items-center justify-between border-t border-border/40 pt-6">
-          <Button
-            variant="outline"
-            onClick={() => prevStep && dispatch({ type: 'SET_STEP', step: prevStep.id })}
-            disabled={!prevStep}
-          >
-            <ChevronLeft className="mr-1.5 size-4" />
-            {prevStep ? prevStep.label : 'Back'}
+          <Button asChild>
+            <Link href="/conversations">
+              <MessageSquare className="mr-2 size-4" />
+              {t.cta}
+            </Link>
           </Button>
-
-          <div className="flex gap-1">
-            {STEPS.map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  'size-1.5 rounded-full transition-all',
-                  i === currentIndex
-                    ? 'bg-primary w-4'
-                    : i < currentIndex
-                    ? 'bg-emerald-400'
-                    : 'bg-border',
-                )}
-              />
-            ))}
-          </div>
-
-          {nextStep ? (
-            <Button
-              onClick={() => dispatch({ type: 'SET_STEP', step: nextStep.id })}
-              disabled={!canAdvance}
-            >
-              {nextStep.label}
-              <ChevronRight className="ml-1.5 size-4" />
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => dispatch({ type: 'RESET' })}
-            >
-              Start Over
-            </Button>
-          )}
         </div>
+        <p className="max-w-2xl text-sm text-muted-foreground">{t.description}</p>
+      </header>
+
+      <div className="mx-auto grid w-full max-w-3xl gap-4 py-6 sm:grid-cols-3">
+        {steps.map((step, i) => (
+          <div
+            key={step.label}
+            className="flex flex-col gap-2 rounded-lg border border-border/60 bg-muted/30 p-4"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-foreground/20 bg-muted font-mono text-xs">
+                {i + 1}
+              </span>
+              <Gamepad2 className="size-4 text-muted-foreground" />
+            </div>
+            <h2 className="text-sm font-medium">{step.label}</h2>
+            <p className="text-xs text-muted-foreground">{step.body}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

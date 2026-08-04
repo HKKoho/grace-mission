@@ -123,6 +123,9 @@ scripture/
   translation/  — Bible translation project status by language/portion
   distribution/ — Scripture distribution records (format, language, community)
   literacy-programs/ — mother-tongue literacy programme plans (aggregate data only)
+consent/
+  records/      — consent records (pseudonyms only) — the source of truth, not the frontmatter flag
+  keys/         — identity-pseudonym maps (human access only)
 skills/         — reference knowledge packages (read-only)
 .clawix/
   audit.log     — append-only action log
@@ -143,7 +146,7 @@ The \`aria-foundation\` skill contains stakeholder audience profiles, communicat
 
 - Draft a proposal, report, newsletter, or indicator set yourself (delegate to the specialist).
 - Read or relay the contents of \`.pii.md\` files.
-- Access \`incidents/keys/\`, \`pastoral-care/keys/\`, or \`finance/restricted/\` — those stay human-only.
+- Access \`incidents/keys/\`, \`pastoral-care/keys/\`, \`finance/restricted/\`, or \`consent/keys/\` — those stay human-only.
 - Approve, submit, or publish anything externally.
 - Promise a timeline or commitment to a partner or supporter.`;
 
@@ -195,6 +198,8 @@ const WORKSPACE_FOLDERS = [
   'scripture/translation',
   'scripture/distribution',
   'scripture/literacy-programs',
+  'consent/records',
+  'consent/keys',
   '.clawix',
 ];
 
@@ -319,7 +324,8 @@ This workspace is managed by Clawix. Ten specialist agents operate within it.
 - Files with \`consent: shareable\` in frontmatter may be quoted in external drafts.
 - \`.clawix/audit.log\` is append-only. Never edit it.
 - Agents draft; humans publish, submit, and pay.
-- \`incidents/keys/\`, \`pastoral-care/keys/\`, and \`finance/restricted/\` are human access only.
+- \`incidents/keys/\`, \`pastoral-care/keys/\`, \`finance/restricted/\`, and \`consent/keys/\` are human access only.
+- \`consent/records/\` is the source of truth for story permissions — a \`consent: shareable\` frontmatter flag with no matching record is unverified.
 
 ## Folder layout
 

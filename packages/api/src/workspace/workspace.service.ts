@@ -120,6 +120,7 @@ export class WorkspaceService {
     '/incidents/keys',
     '/pastoral-care/keys',
     '/finance/restricted',
+    '/consent/keys',
   ];
 
   private assertPathAllowed(relativePath: string, role: UserRole): void {
