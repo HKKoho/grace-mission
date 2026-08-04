@@ -20,18 +20,18 @@ const SHIPPED: readonly RoadmapItem[] = [
   { title: 'Scripture & Literacy Tracker' },
   { title: 'Consent & Story Permissions Tracker' },
   { title: 'Game Studio live wiring' },
+  { title: 'Granular RBAC role taxonomy' },
+  { title: 'Categorized ministries top-bar nav' },
 ];
 
 // Phase 2B — ChurchAIAssistant + ChurchAIAdmin pack integration, build half.
 // Widened after a full feature audit of both source repos found no filler
 // content — every church-* skill carries real, portable material. Also picks
-// up two things the audit surfaced that aren't "church content" per se: the
-// browser-automation tool suite ChurchAIAssistant has and this repo doesn't,
-// and ChurchAIAdmin's more granular (if insecurely-implemented) RBAC role
-// taxonomy, worth adopting as a data-model change before the new agents'
-// workspace folders need department-scoped gating.
+// up one thing the audit surfaced that isn't "church content" per se: the
+// browser-automation tool suite ChurchAIAssistant has and this repo doesn't.
+// (The other non-content pickup, ChurchAIAdmin's RBAC role taxonomy, shipped
+// as the department-scoped 7-role model — see Shipped above.)
 const PHASE_2B: readonly RoadmapItem[] = [
-  { title: 'Adopt granular RBAC role taxonomy' },
   { title: 'Port all ~20 church-* skills' },
   { title: 'Seed the corresponding agents' },
   { title: 'Merge richer pastoral-care content' },
