@@ -22,6 +22,7 @@ const SHIPPED: readonly RoadmapItem[] = [
   { title: 'Game Studio live wiring' },
   { title: 'Granular RBAC role taxonomy' },
   { title: 'Categorized ministries top-bar nav' },
+  { title: 'Richer pastoral-care content' },
 ];
 
 // Phase 2B — ChurchAIAssistant + ChurchAIAdmin pack integration, build half.
@@ -34,7 +35,6 @@ const SHIPPED: readonly RoadmapItem[] = [
 const PHASE_2B: readonly RoadmapItem[] = [
   { title: 'Port all ~20 church-* skills' },
   { title: 'Seed the corresponding agents' },
-  { title: 'Merge richer pastoral-care content' },
   { title: 'Add browser-automation tool suite' },
 ];
 
