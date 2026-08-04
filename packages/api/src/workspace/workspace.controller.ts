@@ -60,7 +60,12 @@ export class WorkspaceController {
     @Req() req: { user: JwtPayload },
     @Query('path') dirPath?: string,
   ): Promise<DirectoryListing> {
-    return this.workspaceService.listDirectory(req.user.sub, dirPath ?? '/', req.user.role);
+    return this.workspaceService.listDirectory(
+      req.user.sub,
+      dirPath ?? '/',
+      req.user.role,
+      req.user.department,
+    );
   }
 
   @Get('files/content')
@@ -71,7 +76,12 @@ export class WorkspaceController {
     if (!filePath) {
       throw new BadRequestException('path query parameter is required');
     }
-    return this.workspaceService.readFile(req.user.sub, filePath, req.user.role);
+    return this.workspaceService.readFile(
+      req.user.sub,
+      filePath,
+      req.user.role,
+      req.user.department,
+    );
   }
 
   @Put('files/content')
@@ -87,6 +97,7 @@ export class WorkspaceController {
       parsed.expectedModifiedAt,
       parsed.force ?? false,
       req.user.role,
+      req.user.department,
     );
   }
 
@@ -98,6 +109,7 @@ export class WorkspaceController {
       parsed.path,
       parsed.type,
       req.user.role,
+      req.user.department,
     );
   }
 
@@ -124,6 +136,7 @@ export class WorkspaceController {
       overwrite === 'true',
       relativePath as string | null,
       req.user.role,
+      req.user.department,
     );
   }
 
@@ -135,6 +148,7 @@ export class WorkspaceController {
       parsed.path,
       parsed.newName,
       req.user.role,
+      req.user.department,
     );
   }
 
@@ -146,6 +160,7 @@ export class WorkspaceController {
       parsed.path,
       parsed.destination,
       req.user.role,
+      req.user.department,
     );
   }
 
@@ -155,7 +170,12 @@ export class WorkspaceController {
     @Body() body: unknown,
   ): Promise<DeleteResponse> {
     const parsed = deleteSchema.parse(body);
-    return this.workspaceService.deleteEntry(req.user.sub, parsed.path, req.user.role);
+    return this.workspaceService.deleteEntry(
+      req.user.sub,
+      parsed.path,
+      req.user.role,
+      req.user.department,
+    );
   }
 
   @Get('files/download')
@@ -171,6 +191,7 @@ export class WorkspaceController {
       req.user.sub,
       filePath,
       req.user.role,
+      req.user.department,
     );
     reply!.header('Content-Type', contentType);
     reply!.header('Content-Disposition', `attachment; filename="${filename}"`);

@@ -15,7 +15,7 @@ export class DashboardService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const isAdmin = userRole === 'admin';
+    const isAdmin = userRole === 'super_admin';
 
     // Admin sees org-wide stats; non-admin sees only their own
     const runFilter = isAdmin ? {} : { session: { userId } };
@@ -40,7 +40,7 @@ export class DashboardService {
   }
 
   async getRecentRuns(userId: string, userRole: string, limit = 10) {
-    const isAdmin = userRole === 'admin';
+    const isAdmin = userRole === 'super_admin';
     const where = isAdmin ? {} : { session: { userId } };
 
     const runs = await this.prisma.agentRun.findMany({
@@ -66,7 +66,7 @@ export class DashboardService {
   }
 
   async getRecentActivity(userId: string, userRole: string, limit = 5) {
-    const isAdmin = userRole === 'admin';
+    const isAdmin = userRole === 'super_admin';
     const where = isAdmin ? {} : { userId };
 
     const logs = await this.prisma.auditLog.findMany({

@@ -52,6 +52,7 @@ ${request}
       false,
       null,
       ctx.role,
+      ctx.department,
     );
 
     return {

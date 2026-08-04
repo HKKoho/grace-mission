@@ -20,7 +20,7 @@ export class AuditService {
     currentUserId?: string,
   ) {
     // Non-admin can only see their own logs
-    const effectiveUserId = userRole === 'admin' ? filters?.userId : currentUserId;
+    const effectiveUserId = userRole === 'super_admin' ? filters?.userId : currentUserId;
 
     return this.auditLogRepo.findFiltered(pagination, {
       userId: effectiveUserId,
@@ -33,7 +33,7 @@ export class AuditService {
 
   async findById(id: string, userRole?: string, currentUserId?: string) {
     const log = await this.auditLogRepo.findById(id);
-    if (userRole !== 'admin' && log.userId !== currentUserId) {
+    if (userRole !== 'super_admin' && log.userId !== currentUserId) {
       throw new ForbiddenException('You can only view your own audit logs');
     }
     return log;

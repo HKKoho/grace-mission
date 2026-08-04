@@ -75,6 +75,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      department: user.department,
       policyName: user.policy?.name ?? 'Standard',
     });
   }
@@ -128,6 +129,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      department: user.department,
       policyName: user.policy?.name ?? 'Standard',
     });
   }

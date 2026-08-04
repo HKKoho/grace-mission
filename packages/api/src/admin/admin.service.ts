@@ -7,6 +7,7 @@ import { ConflictError } from '@clawix/shared';
 import { type Channel, type Policy, Prisma, type User } from '../generated/prisma/client.js';
 import type {
   ChannelType as PrismaChannelType,
+  Department,
   GroupMemberRole,
   UserRole,
 } from '../generated/prisma/enums.js';
@@ -25,12 +26,14 @@ interface CreateUserInput {
   readonly name: string;
   readonly password: string;
   readonly role?: UserRole;
+  readonly department?: Department;
   readonly policyId: string;
 }
 
 interface UpdateUserInput {
   readonly name?: string;
   readonly role?: UserRole;
+  readonly department?: Department;
   readonly isActive?: boolean;
   readonly policyId?: string;
 }
@@ -73,6 +76,7 @@ export class AdminService {
       name: input.name,
       passwordHash,
       role: input.role,
+      department: input.department,
       policyId: input.policyId,
     });
 

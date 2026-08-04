@@ -66,7 +66,7 @@ export class AgentsController {
   }
 
   @Post('user-agents')
-  @Roles(UserRole.admin)
+  @Roles(UserRole.super_admin)
   createUserAgent(
     @Body(new ZodValidationPipe(createUserAgentSchema))
     body: {
@@ -78,13 +78,13 @@ export class AgentsController {
   }
 
   @Patch('user-agents/:id')
-  @Roles(UserRole.admin)
+  @Roles(UserRole.super_admin)
   updateUserAgent(@Param('id') id: string, @Body() body: { agentDefinitionId: string }) {
     return this.agentsService.updateUserAgent(id, body);
   }
 
   @Delete('user-agents/:id')
-  @Roles(UserRole.admin)
+  @Roles(UserRole.super_admin)
   deleteUserAgent(@Param('id') id: string) {
     return this.agentsService.deleteUserAgent(id);
   }

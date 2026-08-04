@@ -334,7 +334,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu>
             {governanceItems
-              .filter((item) => !item.adminOnly || user?.role === 'admin')
+              .filter((item) => !item.adminOnly || user?.role === 'super_admin')
               .map((item) => (
                 <SidebarMenuItem key={item.key}>
                   <SidebarMenuButton
@@ -364,7 +364,7 @@ export function AppSidebar() {
                 }
               }}
             >
-              {user?.role === 'admin' && (
+              {user?.role === 'super_admin' && (
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton

@@ -133,7 +133,7 @@ function formatDetails(details: Record<string, unknown>): string {
 export default function AuditLogsPage() {
   const { user } = useAuth();
   const t = useT(messages);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'super_admin';
 
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);

@@ -75,7 +75,7 @@ describe('AgentsService.getAgent', () => {
 
   it('admin can read any agent', async () => {
     const { service } = makeService({});
-    await expect(service.getAgent(agentId, adminId, 'admin')).resolves.toBeDefined();
+    await expect(service.getAgent(agentId, adminId, 'super_admin')).resolves.toBeDefined();
   });
 
   it('owner can read their custom agent', async () => {
@@ -129,7 +129,7 @@ describe('AgentsService.listAgentRuns', () => {
     });
     const { service } = makeService({ findByAgentDefinitionId });
 
-    await service.listAgentRuns(agentId, { page: 1, limit: 10 }, adminId, 'admin');
+    await service.listAgentRuns(agentId, { page: 1, limit: 10 }, adminId, 'super_admin');
 
     expect(findByAgentDefinitionId).toHaveBeenCalledWith(
       agentId,

@@ -68,10 +68,44 @@ interface ApiUser {
   email: string;
   name: string;
   role: string;
+  department: string;
   policyId: string;
   isActive: boolean;
   createdAt: string;
 }
+
+// Highest to lowest privilege. `super_admin` is the only system-admin-equivalent role
+// (user management, provider config, the admin-only workspace folders); senior_pastor
+// and pastor see every department's workspace folders but aren't system admins;
+// everyone else is scoped to their own `department` (default `all` = unrestricted).
+const ROLE_ORDER = [
+  'super_admin',
+  'senior_pastor',
+  'pastor',
+  'admin_staff',
+  'ministry_leader',
+  'volunteer',
+  'guest',
+] as const;
+type RoleKey = (typeof ROLE_ORDER)[number];
+
+const DEPARTMENT_ORDER = [
+  'all',
+  'program_coordination',
+  'donor_engagement',
+  'monitoring_evaluation',
+  'communications',
+  'field_operations',
+  'pastoral_care',
+  'finance',
+  'outreach',
+  'scripture_literacy',
+] as const;
+type DepartmentKey = (typeof DEPARTMENT_ORDER)[number];
+
+// A role with no run-agent access — mirrors the old 'viewer' special-case (skip agent
+// assignment during signup, disable the primary-agent picker in the edit dialog).
+const READ_ONLY_ROLE: RoleKey = 'guest';
 
 interface PaginatedUsers {
   data: ApiUser[];
@@ -94,10 +128,11 @@ interface PaginatedPolicies {
 // ------------------------------------------------------------------ //
 
 function roleVariant(role: string) {
-  switch (role) {
-    case 'admin':
+  switch (role as RoleKey) {
+    case 'super_admin':
       return 'default' as const;
-    case 'developer':
+    case 'senior_pastor':
+    case 'pastor':
       return 'secondary' as const;
     default:
       return 'outline' as const;
@@ -110,9 +145,8 @@ function roleVariant(role: string) {
 
 interface Permission {
   key: string;
-  admin: boolean;
-  developer: boolean;
-  viewer: boolean;
+  // Roles not listed default to false — only list which roles are allowed.
+  allowed: ReadonlySet<RoleKey>;
 }
 
 interface PermissionGroup {
@@ -120,51 +154,73 @@ interface PermissionGroup {
   permissions: Permission[];
 }
 
+// system_admin_only: matches the @Roles(UserRole.super_admin) guard exactly
+// (admin/agents/provider-config controllers) — nothing else grants these.
+const SYSTEM_ADMIN_ONLY = new Set<RoleKey>(['super_admin']);
+// cross_department: super_admin + the two roles that see every department's
+// workspace folders (assertPathAllowed's CROSS_DEPARTMENT_ROLES).
+const CROSS_DEPARTMENT = new Set<RoleKey>(['super_admin', 'senior_pastor', 'pastor']);
+// operational: everyone who isn't read-only-by-default (guest).
+const OPERATIONAL = new Set<RoleKey>([
+  'super_admin',
+  'senior_pastor',
+  'pastor',
+  'admin_staff',
+  'ministry_leader',
+  'volunteer',
+]);
+const EVERYONE = new Set<RoleKey>(ROLE_ORDER);
+const ELEVATED = new Set<RoleKey>(['super_admin', 'senior_pastor', 'pastor', 'admin_staff', 'ministry_leader']);
+
 const permissionMatrix: PermissionGroup[] = [
   {
     categoryKey: 'agents',
     permissions: [
-      { key: 'viewAgentDefs', admin: true, developer: true, viewer: true },
-      { key: 'createEditAgent', admin: true, developer: true, viewer: false },
-      { key: 'deleteAgent', admin: true, developer: false, viewer: false },
-      { key: 'runAgent', admin: true, developer: true, viewer: false },
+      { key: 'viewAgentDefs', allowed: EVERYONE },
+      { key: 'createEditAgent', allowed: ELEVATED },
+      { key: 'deleteAgent', allowed: CROSS_DEPARTMENT },
+      { key: 'runAgent', allowed: OPERATIONAL },
     ],
   },
   {
     categoryKey: 'skills',
     permissions: [
-      { key: 'browseMarketplace', admin: true, developer: true, viewer: true },
-      { key: 'submitSkill', admin: false, developer: true, viewer: false },
-      { key: 'approveSkill', admin: true, developer: false, viewer: false },
+      { key: 'browseMarketplace', allowed: EVERYONE },
+      { key: 'submitSkill', allowed: ELEVATED },
+      { key: 'approveSkill', allowed: CROSS_DEPARTMENT },
     ],
   },
   {
     categoryKey: 'governance',
     permissions: [
-      { key: 'viewTokenOrg', admin: true, developer: false, viewer: true },
-      { key: 'viewTokenOwn', admin: true, developer: true, viewer: false },
-      { key: 'setBudgetAlerts', admin: true, developer: false, viewer: false },
-      { key: 'viewAuditLogs', admin: true, developer: true, viewer: true },
-      { key: 'exportAuditLogs', admin: true, developer: false, viewer: false },
+      { key: 'viewTokenOrg', allowed: CROSS_DEPARTMENT },
+      { key: 'viewTokenOwn', allowed: EVERYONE },
+      { key: 'setBudgetAlerts', allowed: SYSTEM_ADMIN_ONLY },
+      { key: 'viewAuditLogs', allowed: EVERYONE },
+      { key: 'exportAuditLogs', allowed: SYSTEM_ADMIN_ONLY },
     ],
   },
   {
     categoryKey: 'administration',
     permissions: [
-      { key: 'manageUsers', admin: true, developer: false, viewer: false },
-      { key: 'assignRoles', admin: true, developer: false, viewer: false },
-      { key: 'managePolicies', admin: true, developer: false, viewer: false },
-      { key: 'configureProviders', admin: true, developer: false, viewer: false },
-      { key: 'orgSettings', admin: true, developer: false, viewer: false },
-      { key: 'manageGroups', admin: true, developer: true, viewer: false },
+      { key: 'manageUsers', allowed: SYSTEM_ADMIN_ONLY },
+      { key: 'assignRoles', allowed: SYSTEM_ADMIN_ONLY },
+      { key: 'managePolicies', allowed: SYSTEM_ADMIN_ONLY },
+      { key: 'configureProviders', allowed: SYSTEM_ADMIN_ONLY },
+      { key: 'orgSettings', allowed: SYSTEM_ADMIN_ONLY },
+      { key: 'manageGroups', allowed: ELEVATED },
     ],
   },
 ];
 
-const roleIcons: Record<string, typeof ShieldCheck> = {
-  admin: ShieldCheck,
-  developer: Shield,
-  viewer: Eye,
+const roleIcons: Record<RoleKey, typeof ShieldCheck> = {
+  super_admin: ShieldCheck,
+  senior_pastor: ShieldCheck,
+  pastor: Shield,
+  admin_staff: Shield,
+  ministry_leader: Shield,
+  volunteer: Eye,
+  guest: Eye,
 };
 
 // ------------------------------------------------------------------ //
@@ -222,24 +278,44 @@ const messages = {
       remove: 'Remove',
     },
     roleLabels: {
-      admin: 'Admin',
-      developer: 'Developer',
-      viewer: 'Viewer',
+      super_admin: 'Super Admin',
+      senior_pastor: 'Senior Pastor',
+      pastor: 'Pastor',
+      admin_staff: 'Admin Staff',
+      ministry_leader: 'Ministry Leader',
+      volunteer: 'Volunteer',
+      guest: 'Guest',
     },
     roleDescriptions: {
-      admin:
+      super_admin:
         'Full platform control: org settings, user management, RBAC, agent lifecycle, channel config, skill approval, providers, system health.',
-      developer:
+      senior_pastor:
+        'Sees every department’s workspace folders and can approve/delete agents and skills, but does not manage system settings.',
+      pastor:
+        'Same cross-department visibility as Senior Pastor; scoped to ministry oversight rather than platform administration.',
+      admin_staff:
         'Build & operate: create agents, write skills, run agents, schedule tasks, monitor usage, manage channels, SDK integration.',
-      viewer: 'Read-only: dashboards, audit logs, token reports.',
+      ministry_leader:
+        'Operates within their own department’s workspace folders: creates and runs agents, submits skills, manages that department’s content.',
+      volunteer: 'Runs agents and views content within their own department. Cannot create or edit agents.',
+      guest: 'Read-only: dashboards, audit logs, token reports.',
+    },
+    departmentLabels: {
+      all: 'All departments',
+      program_coordination: 'Program Coordination',
+      donor_engagement: 'Donor Engagement',
+      monitoring_evaluation: 'Monitoring & Evaluation',
+      communications: 'Communications',
+      field_operations: 'Field Operations',
+      pastoral_care: 'Pastoral Care',
+      finance: 'Finance',
+      outreach: 'Outreach',
+      scripture_literacy: 'Scripture & Literacy',
     },
     userCount: (n: number) => `${n} user${n !== 1 ? 's' : ''}`,
     matrix: {
       heading: 'Permission Matrix',
       permission: 'Permission',
-      admin: 'Admin',
-      developer: 'Developer',
-      viewer: 'Viewer',
       footnote: "Roles are system-defined. Contact your administrator to change a user's role.",
       allowed: 'Allowed',
       notAllowed: 'Not allowed',
@@ -277,6 +353,7 @@ const messages = {
       email: 'Email',
       password: 'Password',
       role: 'Role',
+      department: 'Department',
       policy: 'Policy',
       cancel: 'Cancel',
       submit: 'Create',
@@ -292,7 +369,7 @@ const messages = {
     },
     doneStep: {
       heading: 'All Set!',
-      createdViewer: (name: string) => `${name} has been created with read-only access.`,
+      createdReadOnly: (name: string) => `${name} has been created with read-only access.`,
       createdAgent: (name: string) => `${name} has been created and assigned a primary agent.`,
       done: 'Done',
     },
@@ -301,13 +378,14 @@ const messages = {
       description: (name: string) => `Update ${name}'s profile.`,
       name: 'Name',
       role: 'Role',
+      department: 'Department',
       policy: 'Policy',
       status: 'Status',
       active: 'Active',
       inactive: 'Inactive',
       primaryAgent: 'Primary Agent',
       noAgent: 'No agent assigned',
-      viewerHelp: 'Viewers cannot run agents.',
+      readOnlyHelp: 'Guests cannot run agents.',
       agentHelp: 'The primary agent allows this user to start conversations.',
       cancel: 'Cancel',
       save: 'Save',
@@ -350,24 +428,41 @@ const messages = {
       remove: '移除',
     },
     roleLabels: {
-      admin: '管理員',
-      developer: '開發者',
-      viewer: '檢視者',
+      super_admin: '超級管理員',
+      senior_pastor: '主任牧師',
+      pastor: '牧師',
+      admin_staff: '行政同工',
+      ministry_leader: '事工負責人',
+      volunteer: '志工',
+      guest: '訪客',
     },
     roleDescriptions: {
-      admin:
+      super_admin:
         '完整平台控制權：組織設定、使用者管理、RBAC、代理生命週期、頻道設定、技能審核、供應商、系統健康狀態。',
-      developer:
+      senior_pastor: '可檢視所有事工類別的工作區資料夾，並可核准／刪除代理與技能，但不管理系統設定。',
+      pastor: '與主任牧師相同的跨類別檢視權限；著重於事工督導而非平台管理。',
+      admin_staff:
         '建置與營運：建立代理、撰寫技能、執行代理、排程任務、監控用量、管理頻道、SDK 整合。',
-      viewer: '唯讀：儀表板、稽核日誌、Token 報表。',
+      ministry_leader: '僅限於自己負責的事工類別工作區資料夾：建立與執行代理、提交技能、管理該類別內容。',
+      volunteer: '可在自己負責的事工類別內執行代理與檢視內容，無法建立或編輯代理。',
+      guest: '唯讀：儀表板、稽核日誌、Token 報表。',
+    },
+    departmentLabels: {
+      all: '所有事工類別',
+      program_coordination: '事工協調',
+      donor_engagement: '財務管理',
+      monitoring_evaluation: '國度成效',
+      communications: '宣揚福音',
+      field_operations: '宣教工場',
+      pastoral_care: '牧養關懷',
+      finance: '財務',
+      outreach: '外展佈道',
+      scripture_literacy: '聖經與識字',
     },
     userCount: (n: number) => `${n} 位使用者`,
     matrix: {
       heading: '權限矩陣',
       permission: '權限',
-      admin: '管理員',
-      developer: '開發者',
-      viewer: '檢視者',
       footnote: '角色由系統定義。如需變更使用者的角色，請聯絡您的管理員。',
       allowed: '允許',
       notAllowed: '不允許',
@@ -405,6 +500,7 @@ const messages = {
       email: '電子郵件',
       password: '密碼',
       role: '角色',
+      department: '事工類別',
       policy: '政策',
       cancel: '取消',
       submit: '建立',
@@ -420,7 +516,7 @@ const messages = {
     },
     doneStep: {
       heading: '全部完成！',
-      createdViewer: (name: string) => `${name} 已建立，並具有唯讀存取權限。`,
+      createdReadOnly: (name: string) => `${name} 已建立，並具有唯讀存取權限。`,
       createdAgent: (name: string) => `${name} 已建立，並已指派主要代理。`,
       done: '完成',
     },
@@ -429,13 +525,14 @@ const messages = {
       description: (name: string) => `更新 ${name} 的個人資料。`,
       name: '名稱',
       role: '角色',
+      department: '事工類別',
       policy: '政策',
       status: '狀態',
       active: '啟用中',
       inactive: '未啟用',
       primaryAgent: '主要代理',
       noAgent: '未指派代理',
-      viewerHelp: '檢視者無法執行代理。',
+      readOnlyHelp: '訪客無法執行代理。',
       agentHelp: '主要代理可讓此使用者開始對話。',
       cancel: '取消',
       save: '儲存',
@@ -470,15 +567,13 @@ const messages = {
     inactive: string;
   };
   rowActions: { edit: string; remove: string };
-  roleLabels: { admin: string; developer: string; viewer: string };
-  roleDescriptions: { admin: string; developer: string; viewer: string };
+  roleLabels: Record<RoleKey, string>;
+  roleDescriptions: Record<RoleKey, string>;
+  departmentLabels: Record<DepartmentKey, string>;
   userCount: (n: number) => string;
   matrix: {
     heading: string;
     permission: string;
-    admin: string;
-    developer: string;
-    viewer: string;
     footnote: string;
     allowed: string;
     notAllowed: string;
@@ -492,6 +587,7 @@ const messages = {
     email: string;
     password: string;
     role: string;
+    department: string;
     policy: string;
     cancel: string;
     submit: string;
@@ -507,7 +603,7 @@ const messages = {
   };
   doneStep: {
     heading: string;
-    createdViewer: (name: string) => string;
+    createdReadOnly: (name: string) => string;
     createdAgent: (name: string) => string;
     done: string;
   };
@@ -516,13 +612,14 @@ const messages = {
     description: (name: string) => string;
     name: string;
     role: string;
+    department: string;
     policy: string;
     status: string;
     active: string;
     inactive: string;
     primaryAgent: string;
     noAgent: string;
-    viewerHelp: string;
+    readOnlyHelp: string;
     agentHelp: string;
     cancel: string;
     save: string;
@@ -614,6 +711,7 @@ export default function UsersPage() {
           name: form.get('name'),
           password: form.get('password'),
           role,
+          department: form.get('department'),
           policyId: form.get('policyId'),
         }),
       });
@@ -622,8 +720,8 @@ export default function UsersPage() {
       setCreatedUserRole(role);
       setSelectedAgentId('');
 
-      // Skip agent assignment for viewers (they can't run agents)
-      if (role === 'viewer') {
+      // Skip agent assignment for read-only roles (they can't run agents)
+      if (role === READ_ONLY_ROLE) {
         setCreateStep('done');
       } else {
         setCreateStep('assign');
@@ -765,7 +863,9 @@ export default function UsersPage() {
   }
 
   const sortedUsers = useMemo(() => {
-    const roleOrder: Record<string, number> = { admin: 0, developer: 1, viewer: 2 };
+    const roleOrder: Record<string, number> = Object.fromEntries(
+      ROLE_ORDER.map((role, i) => [role, i]),
+    );
     const policyMap = new Map(policies.map((p) => [p.id, p.name]));
 
     return [...users].sort((a, b) => {
@@ -910,9 +1010,17 @@ export default function UsersPage() {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell className="text-muted-foreground">{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant={roleVariant(user.role)}>
-                          {t.roleLabels[user.role as keyof typeof t.roleLabels] ?? user.role}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={roleVariant(user.role)}>
+                            {t.roleLabels[user.role as keyof typeof t.roleLabels] ?? user.role}
+                          </Badge>
+                          {user.department !== 'all' && (
+                            <span className="text-xs text-muted-foreground">
+                              {t.departmentLabels[user.department as keyof typeof t.departmentLabels] ??
+                                user.department}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
@@ -960,8 +1068,8 @@ export default function UsersPage() {
 
         {/* ---- Roles Tab ---- */}
         <TabsContent value="roles" className="mt-4 space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {(['admin', 'developer', 'viewer'] as const).map((role) => {
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {ROLE_ORDER.map((role) => {
               const Icon = roleIcons[role] ?? Shield;
               const count = roleCounts[role] ?? 0;
               return (
@@ -983,14 +1091,16 @@ export default function UsersPage() {
 
           <div>
             <h3 className="mb-3 text-sm font-semibold">{t.matrix.heading}</h3>
-            <div className="rounded-md border bg-background/30 backdrop-blur-sm">
+            <div className="overflow-x-auto rounded-md border bg-background/30 backdrop-blur-sm">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[300px]">{t.matrix.permission}</TableHead>
-                    <TableHead className="text-center">{t.matrix.admin}</TableHead>
-                    <TableHead className="text-center">{t.matrix.developer}</TableHead>
-                    <TableHead className="text-center">{t.matrix.viewer}</TableHead>
+                    <TableHead className="w-[220px]">{t.matrix.permission}</TableHead>
+                    {ROLE_ORDER.map((role) => (
+                      <TableHead key={role} className="text-center whitespace-nowrap">
+                        {t.roleLabels[role]}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -998,7 +1108,7 @@ export default function UsersPage() {
                     <Fragment key={group.categoryKey}>
                       <TableRow>
                         <TableCell
-                          colSpan={4}
+                          colSpan={ROLE_ORDER.length + 1}
                           className="bg-muted/50 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                         >
                           {t.categories[group.categoryKey as keyof typeof t.categories]}
@@ -1007,45 +1117,21 @@ export default function UsersPage() {
                       {group.permissions.map((perm) => (
                         <TableRow key={perm.key}>
                           <TableCell className="text-sm">{t.permissions[perm.key as keyof typeof t.permissions]}</TableCell>
-                          <TableCell className="text-center">
-                            {perm.admin ? (
-                              <Check
-                                className="mx-auto size-4 text-green-500"
-                                aria-label={t.matrix.allowed}
-                              />
-                            ) : (
-                              <Minus
-                                className="mx-auto size-4 text-muted-foreground/40"
-                                aria-label={t.matrix.notAllowed}
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {perm.developer ? (
-                              <Check
-                                className="mx-auto size-4 text-green-500"
-                                aria-label={t.matrix.allowed}
-                              />
-                            ) : (
-                              <Minus
-                                className="mx-auto size-4 text-muted-foreground/40"
-                                aria-label={t.matrix.notAllowed}
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {perm.viewer ? (
-                              <Check
-                                className="mx-auto size-4 text-green-500"
-                                aria-label={t.matrix.allowed}
-                              />
-                            ) : (
-                              <Minus
-                                className="mx-auto size-4 text-muted-foreground/40"
-                                aria-label={t.matrix.notAllowed}
-                              />
-                            )}
-                          </TableCell>
+                          {ROLE_ORDER.map((role) => (
+                            <TableCell key={role} className="text-center">
+                              {perm.allowed.has(role) ? (
+                                <Check
+                                  className="mx-auto size-4 text-green-500"
+                                  aria-label={t.matrix.allowed}
+                                />
+                              ) : (
+                                <Minus
+                                  className="mx-auto size-4 text-muted-foreground/40"
+                                  aria-label={t.matrix.notAllowed}
+                                />
+                              )}
+                            </TableCell>
+                          ))}
                         </TableRow>
                       ))}
                     </Fragment>
@@ -1126,11 +1212,28 @@ export default function UsersPage() {
                     name="role"
                     id="create-role"
                     className="rounded-md border bg-background px-3 py-2 text-sm"
-                    defaultValue="developer"
+                    defaultValue="admin_staff"
                   >
-                    <option value="admin">{t.roleLabels.admin}</option>
-                    <option value="developer">{t.roleLabels.developer}</option>
-                    <option value="viewer">{t.roleLabels.viewer}</option>
+                    {ROLE_ORDER.map((role) => (
+                      <option key={role} value={role}>
+                        {t.roleLabels[role]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="create-department">{t.createDialog.department}</Label>
+                  <select
+                    name="department"
+                    id="create-department"
+                    className="rounded-md border bg-background px-3 py-2 text-sm"
+                    defaultValue="all"
+                  >
+                    {DEPARTMENT_ORDER.map((department) => (
+                      <option key={department} value={department}>
+                        {t.departmentLabels[department]}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -1223,8 +1326,8 @@ export default function UsersPage() {
               <div className="text-center">
                 <h3 className="text-lg font-semibold">{t.doneStep.heading}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {createdUserRole === 'viewer'
-                    ? t.doneStep.createdViewer(createdUserName)
+                  {createdUserRole === READ_ONLY_ROLE
+                    ? t.doneStep.createdReadOnly(createdUserName)
                     : t.doneStep.createdAgent(createdUserName)}
                 </p>
               </div>
@@ -1258,6 +1361,7 @@ export default function UsersPage() {
                   {
                     name: form.get('name'),
                     role: form.get('role'),
+                    department: form.get('department'),
                     policyId: form.get('policyId'),
                     isActive: form.get('isActive') === 'true',
                   },
@@ -1279,14 +1383,31 @@ export default function UsersPage() {
                   value={editUserRole}
                   onChange={(e) => {
                     setEditUserRole(e.target.value);
-                    if (e.target.value === 'viewer') {
+                    if (e.target.value === READ_ONLY_ROLE) {
                       setEditUserAgentId('');
                     }
                   }}
                 >
-                  <option value="admin">{t.roleLabels.admin}</option>
-                  <option value="developer">{t.roleLabels.developer}</option>
-                  <option value="viewer">{t.roleLabels.viewer}</option>
+                  {ROLE_ORDER.map((role) => (
+                    <option key={role} value={role}>
+                      {t.roleLabels[role]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="edit-department">{t.editDialog.department}</Label>
+                <select
+                  name="department"
+                  id="edit-department"
+                  className="rounded-md border bg-background px-3 py-2 text-sm"
+                  defaultValue={editUser.department}
+                >
+                  {DEPARTMENT_ORDER.map((department) => (
+                    <option key={department} value={department}>
+                      {t.departmentLabels[department]}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex flex-col gap-2">
@@ -1327,7 +1448,7 @@ export default function UsersPage() {
                   onChange={(e) => {
                     setEditUserAgentId(e.target.value);
                   }}
-                  disabled={editUserRole === 'viewer'}
+                  disabled={editUserRole === READ_ONLY_ROLE}
                 >
                   <option value="">{t.editDialog.noAgent}</option>
                   {agentDefs.map((a) => (
@@ -1337,7 +1458,7 @@ export default function UsersPage() {
                   ))}
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  {editUserRole === 'viewer' ? t.editDialog.viewerHelp : t.editDialog.agentHelp}
+                  {editUserRole === READ_ONLY_ROLE ? t.editDialog.readOnlyHelp : t.editDialog.agentHelp}
                 </p>
               </div>
               <DialogFooter>
