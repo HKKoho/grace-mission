@@ -7,20 +7,16 @@ interface RoadmapItem {
   readonly eta?: string;
 }
 
+// Phase 2A (the original gospel-mission 8-key-areas backlog) shipped in full —
+// folded in here rather than kept as its own now-empty section.
 const SHIPPED: readonly RoadmapItem[] = [
   { title: 'Pastoral-care agent' },
   { title: 'Speech input & read-aloud' },
-];
-
-// Phase 2A — the original, still-unfinished Phase 2 business (gospel-mission's
-// 8 key areas). Unchanged in substance from the prior Next up / Later split —
-// just grouped under one label so it isn't confused with the new 2B/2C work.
-const PHASE_2A: readonly RoadmapItem[] = [
-  { title: 'Partners Directory', eta: '~1 wk' },
-  { title: 'Mission Trip Fields', eta: '~1 wk' },
-  { title: 'Kingdom Impact Indicators', eta: '~2–3 wks' },
-  { title: 'Evangelism & Outreach Agent', eta: '~2 wks' },
-  { title: 'Financial Stewardship & Ledger Export', eta: '~3–4 wks' },
+  { title: 'Partners Directory' },
+  { title: 'Mission Trip Fields' },
+  { title: 'Kingdom Impact Indicators' },
+  { title: 'Financial Stewardship & Ledger Export' },
+  { title: 'Evangelism & Outreach Agent' },
   { title: 'Scripture & Literacy Tracker' },
   { title: 'Consent & Story Permissions Tracker' },
   { title: 'Game Studio live wiring' },
@@ -96,7 +92,6 @@ export function Phase2RoadmapCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 text-xs">
         <RoadmapSection label="Shipped" items={SHIPPED} />
-        <RoadmapSection label="Phase 2A" items={PHASE_2A} />
         <RoadmapSection label="Phase 2B" items={PHASE_2B} />
         <RoadmapSection label="Phase 2C" items={PHASE_2C} />
         <RoadmapSection label="Phase 2D" items={PHASE_2D} />
