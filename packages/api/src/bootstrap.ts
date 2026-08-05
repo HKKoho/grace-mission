@@ -206,7 +206,7 @@ async function main(): Promise<void> {
       email: adminEmail!,
       name: adminName,
       passwordHash,
-      role: 'admin',
+      role: 'super_admin',
       policyId: unrestrictedPolicy.id,
       isActive: true,
     },

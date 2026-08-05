@@ -2320,7 +2320,7 @@ export default function UserAgentsPage() {
   const [editAgent, setEditAgent] = useState<AgentDefinition | null>(null);
   const [viewAgent, setViewAgent] = useState<AgentDefinition | null>(null);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'super_admin';
   const currentUserId = user?.sub;
 
   const fetchAgents = useCallback(async () => {

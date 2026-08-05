@@ -66,7 +66,7 @@ export class TokensService {
       totalEstimatedCostUsd: number;
     }[];
 
-    if (userRole === 'admin') {
+    if (userRole === 'super_admin') {
       userUsages = await this.tokenUsageRepo.sumAllUsers(startOfMonth, endOfMonth);
     } else {
       const single = await this.tokenUsageRepo.sumByUserId(userId, startOfMonth, endOfMonth);

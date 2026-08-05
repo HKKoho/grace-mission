@@ -10,7 +10,7 @@ import { ProviderConfigService } from './provider-config.service.js';
 
 @ApiTags('admin/providers')
 @Controller('admin/providers')
-@Roles(UserRole.admin)
+@Roles(UserRole.super_admin)
 export class ProviderConfigController {
   constructor(private readonly providerConfigService: ProviderConfigService) {}
 

@@ -44,9 +44,30 @@ model Policy {
 // ============================================================================
 
 enum UserRole {
-  admin
-  developer
-  viewer
+  super_admin
+  senior_pastor
+  pastor
+  admin_staff
+  ministry_leader
+  volunteer
+  guest
+}
+
+// Department scoping for workspace folder visibility. `all` (the default) preserves
+// today's behaviour of seeing every non-admin-only folder; a specific department
+// narrows a user to that domain's folders plus the always-shared ones (coordination
+// artifacts, skills, the consent registry).
+enum Department {
+  all
+  program_coordination
+  donor_engagement
+  monitoring_evaluation
+  communications
+  field_operations
+  pastoral_care
+  finance
+  outreach
+  scripture_literacy
 }
 
 model User {
@@ -54,7 +75,8 @@ model User {
   email        String   @unique
   name         String
   passwordHash String
-  role         UserRole @default(viewer)
+  role         UserRole   @default(guest)
+  department   Department @default(all)
   policyId     String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -474,4 +496,23 @@ model SystemSettings {
   settings  Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CongregationProfile {
+  id                  String   @id @default("default")
+  ageUnder11Pct       Float    @default(0)
+  age11to17Pct        Float    @default(0)
+  age18to24Pct        Float    @default(0)
+  age25to34Pct        Float    @default(0)
+  age35to49Pct        Float    @default(0)
+  age50to74Pct        Float    @default(0)
+  ageOver75Pct        Float    @default(0)
+  economicPoorPct     Float    @default(0)
+  economicBelowAvgPct Float    @default(0)
+  economicAveragePct  Float    @default(0)
+  economicAboveAvgPct Float    @default(0)
+  economicRichPct     Float    @default(0)
+  ethnicGroups        String[] @default([])
+  educationLevels     String[] @default([])
+  updatedAt           DateTime @updatedAt
 }

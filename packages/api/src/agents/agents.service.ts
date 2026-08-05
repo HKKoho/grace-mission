@@ -35,7 +35,7 @@ export class AgentsService {
 
   async getAgent(id: string, userId?: string, userRole?: string): Promise<AgentDefinition> {
     const agent = await this.agentDefRepo.findById(id);
-    if (userRole === 'admin' || !userId) {
+    if (userRole === 'super_admin' || !userId) {
       return agent;
     }
     if (agent.isOfficial || agent.createdById === userId) {
@@ -55,7 +55,7 @@ export class AgentsService {
   ): Promise<AgentDefinition> {
     // Only admins may create Public (official) agents; force false otherwise
     // so non-admins can't escalate by setting the flag in the request body.
-    const isOfficial = userRole === 'admin' ? (input.isOfficial ?? false) : false;
+    const isOfficial = userRole === 'super_admin' ? (input.isOfficial ?? false) : false;
     return this.agentDefRepo.create({ ...input, createdById, isOfficial });
   }
 
@@ -65,7 +65,7 @@ export class AgentsService {
     userId?: string,
     userRole?: string,
   ): Promise<AgentDefinition> {
-    if (userRole !== 'admin') {
+    if (userRole !== 'super_admin') {
       const existing = await this.agentDefRepo.findById(id);
       if (existing.isOfficial || existing.createdById !== userId) {
         throw new ForbiddenException('You can only edit your own custom agent definitions');
@@ -75,7 +75,7 @@ export class AgentsService {
   }
 
   async deleteAgent(id: string, userId?: string, userRole?: string): Promise<AgentDefinition> {
-    if (userRole !== 'admin') {
+    if (userRole !== 'super_admin') {
       const existing = await this.agentDefRepo.findById(id);
       if (existing.isOfficial || existing.createdById !== userId) {
         throw new ForbiddenException('You can only delete your own custom agent definitions');
@@ -90,12 +90,12 @@ export class AgentsService {
     userId?: string,
     userRole?: string,
   ): Promise<PaginatedResponse<AgentRun>> {
-    const scopeUserId = userRole === 'admin' ? undefined : userId;
+    const scopeUserId = userRole === 'super_admin' ? undefined : userId;
     return this.agentRunRepo.findByAgentDefinitionId(agentDefinitionId, pagination, scopeUserId);
   }
 
   async listUserAgents(userId: string, userRole: string) {
-    if (userRole === 'admin') {
+    if (userRole === 'super_admin') {
       return this.userAgentRepo.findAllWithDetails();
     }
     return this.userAgentRepo.findAllByUserIdWithDetails(userId);

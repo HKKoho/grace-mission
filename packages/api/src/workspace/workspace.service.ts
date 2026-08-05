@@ -14,7 +14,8 @@ import { createLogger } from '@clawix/shared';
 import { UserAgentRepository } from '../db/user-agent.repository.js';
 import { resolveWorkspacePaths } from '../engine/workspace-resolver.js';
 import type { DirectoryListing, FileContent, FileEntry, FileType } from '@clawix/shared';
-import { UserRole } from '../generated/prisma/enums.js';
+import { Department, UserRole } from '../generated/prisma/enums.js';
+import { mergeFrontmatter } from '../common/frontmatter.js';
 import { ScopedFs } from './scoped-fs.js';
 
 const logger = createLogger('workspace');
@@ -116,19 +117,80 @@ export class WorkspaceService {
     return { fs: new ScopedFs(localPath), basePath: localPath };
   }
 
-  private assertPathAllowed(relativePath: string, role: UserRole): void {
-    if (
-      (relativePath === '/incidents/keys' || relativePath.startsWith('/incidents/keys/')) &&
-      role !== UserRole.admin
-    ) {
-      throw new ForbiddenException('This folder is restricted to admin users');
+  private static readonly ADMIN_ONLY_PATHS = [
+    '/incidents/keys',
+    '/pastoral-care/keys',
+    '/finance/restricted',
+    '/consent/keys',
+  ];
+
+  // Maps a workspace folder prefix to the department that owns it. A folder with no
+  // entry here (coordination artifacts, skills, the consent registry, etc.) is shared
+  // across every department — no restriction beyond the admin-only paths above.
+  private static readonly FOLDER_DEPARTMENTS: Readonly<Record<string, Department>> = {
+    '/finance': Department.finance,
+    '/pastoral-care': Department.pastoral_care,
+    '/prayer-requests': Department.pastoral_care,
+    '/field-ops': Department.field_operations,
+    '/incidents': Department.field_operations,
+    '/mne': Department.monitoring_evaluation,
+    '/comms': Department.communications,
+    '/outreach': Department.outreach,
+    '/scripture': Department.scripture_literacy,
+    '/donors': Department.donor_engagement,
+    '/partners': Department.donor_engagement,
+    '/proposals': Department.donor_engagement,
+    '/reports': Department.donor_engagement,
+    '/donor-research': Department.donor_engagement,
+  };
+
+  // Roles that see every department's folders regardless of their own `department`
+  // value — narrower than system-admin (they still can't touch ADMIN_ONLY_PATHS).
+  private static readonly CROSS_DEPARTMENT_ROLES: ReadonlySet<UserRole> = new Set([
+    UserRole.super_admin,
+    UserRole.senior_pastor,
+    UserRole.pastor,
+  ]);
+
+  private resolveFolderDepartment(relativePath: string): Department | null {
+    for (const [prefix, department] of Object.entries(WorkspaceService.FOLDER_DEPARTMENTS)) {
+      if (relativePath === prefix || relativePath.startsWith(`${prefix}/`)) {
+        return department;
+      }
+    }
+    return null;
+  }
+
+  private assertPathAllowed(relativePath: string, role: UserRole, department: Department): void {
+    const isAdminOnly = WorkspaceService.ADMIN_ONLY_PATHS.some(
+      (restricted) => relativePath === restricted || relativePath.startsWith(`${restricted}/`),
+    );
+    if (isAdminOnly) {
+      if (role !== UserRole.super_admin) {
+        throw new ForbiddenException('This folder is restricted to admin users');
+      }
+      return;
+    }
+
+    if (WorkspaceService.CROSS_DEPARTMENT_ROLES.has(role) || department === Department.all) {
+      return;
+    }
+
+    const ownerDepartment = this.resolveFolderDepartment(relativePath);
+    if (ownerDepartment !== null && ownerDepartment !== department) {
+      throw new ForbiddenException('This folder is outside your department');
     }
   }
 
-  async listDirectory(userId: string, dirPath: string, role: UserRole): Promise<DirectoryListing> {
+  async listDirectory(
+    userId: string,
+    dirPath: string,
+    role: UserRole,
+    department: Department,
+  ): Promise<DirectoryListing> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
     const resolved = sfs.resolve(dirPath);
-    this.assertPathAllowed('/' + path.relative(basePath, resolved), role);
+    this.assertPathAllowed('/' + path.relative(basePath, resolved), role, department);
 
     let stat: Awaited<ReturnType<typeof sfs.stat>>;
     try {
@@ -205,10 +267,15 @@ export class WorkspaceService {
     };
   }
 
-  async readFile(userId: string, filePath: string, role: UserRole): Promise<FileContent> {
+  async readFile(
+    userId: string,
+    filePath: string,
+    role: UserRole,
+    department: Department,
+  ): Promise<FileContent> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
     const resolved = sfs.resolve(filePath);
-    this.assertPathAllowed('/' + path.relative(basePath, resolved), role);
+    this.assertPathAllowed('/' + path.relative(basePath, resolved), role, department);
 
     let stat: Awaited<ReturnType<typeof sfs.stat>>;
     try {
@@ -252,10 +319,11 @@ export class WorkspaceService {
     expectedModifiedAt: string,
     force: boolean,
     role: UserRole,
+    department: Department,
   ): Promise<{ path: string; size: number; modifiedAt: string }> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
     const resolved = sfs.resolve(filePath);
-    this.assertPathAllowed('/' + path.relative(basePath, resolved), role);
+    this.assertPathAllowed('/' + path.relative(basePath, resolved), role, department);
 
     let stat: Awaited<ReturnType<typeof sfs.stat>>;
     try {
@@ -296,14 +364,40 @@ export class WorkspaceService {
     };
   }
 
+  async updateFrontmatter(
+    userId: string,
+    filePath: string,
+    updates: Record<string, string>,
+    expectedModifiedAt: string,
+    role: UserRole,
+    department: Department,
+  ): Promise<{ path: string; size: number; modifiedAt: string }> {
+    const file = await this.readFile(userId, filePath, role, department);
+    if (file.content === null) {
+      throw new BadRequestException('File content is not readable as text');
+    }
+
+    const merged = mergeFrontmatter(file.content, updates);
+    return this.updateFileContent(
+      userId,
+      filePath,
+      merged,
+      expectedModifiedAt,
+      false,
+      role,
+      department,
+    );
+  }
+
   async createEntry(
     userId: string,
     entryPath: string,
     type: 'file' | 'directory',
     role: UserRole,
+    department: Department,
   ): Promise<FileEntry> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role);
+    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role, department);
     if (await sfs.exists(entryPath)) {
       throw new ConflictException('Path already exists');
     }
@@ -331,15 +425,16 @@ export class WorkspaceService {
     entryPath: string,
     newName: string,
     role: UserRole,
+    department: Department,
   ): Promise<FileEntry> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role);
+    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role, department);
     if (!(await sfs.exists(entryPath))) throw new NotFoundException('Path not found');
     const resolved = sfs.resolve(entryPath);
     const parentDir = path.dirname(resolved);
     const newResolved = path.join(parentDir, newName);
     const newRelativePath = '/' + path.relative(basePath, newResolved);
-    this.assertPathAllowed(newRelativePath, role);
+    this.assertPathAllowed(newRelativePath, role, department);
     if (await sfs.exists(newRelativePath))
       throw new ConflictException(`"${newName}" already exists in this directory`);
     await sfs.rename(entryPath, newRelativePath);
@@ -360,10 +455,15 @@ export class WorkspaceService {
     entryPath: string,
     destination: string,
     role: UserRole,
+    department: Department,
   ): Promise<FileEntry> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(destination)), role);
+    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role, department);
+    this.assertPathAllowed(
+      '/' + path.relative(basePath, sfs.resolve(destination)),
+      role,
+      department,
+    );
     if (!(await sfs.exists(entryPath))) throw new NotFoundException('Source path not found');
     const destStat = await sfs.stat(destination).catch(() => null);
     if (!destStat?.isDirectory()) throw new NotFoundException('Destination directory not found');
@@ -391,9 +491,10 @@ export class WorkspaceService {
     userId: string,
     entryPath: string,
     role: UserRole,
+    department: Department,
   ): Promise<{ path: string; deleted: true }> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role);
+    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(entryPath)), role, department);
     if (!(await sfs.exists(entryPath))) throw new NotFoundException('Path not found');
     const resolved = sfs.resolve(entryPath);
     const relativePath = '/' + path.relative(basePath, resolved);
@@ -406,6 +507,7 @@ export class WorkspaceService {
     userId: string,
     filePath: string,
     role: UserRole,
+    department: Department,
   ): Promise<{
     stream: NodeJS.ReadableStream;
     filename: string;
@@ -413,7 +515,7 @@ export class WorkspaceService {
     size: number;
   }> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(filePath)), role);
+    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(filePath)), role, department);
     let stat: Awaited<ReturnType<typeof sfs.stat>>;
     try {
       stat = await sfs.stat(filePath);
@@ -493,9 +595,10 @@ export class WorkspaceService {
     overwrite: boolean,
     fileRelativePath: string | null,
     role: UserRole,
+    department: Department,
   ): Promise<FileEntry> {
     const { fs: sfs, basePath } = await this.createScopedFs(userId);
-    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(dirPath)), role);
+    this.assertPathAllowed('/' + path.relative(basePath, sfs.resolve(dirPath)), role, department);
     if (dirPath !== '/') {
       const dirStat = await sfs.stat(dirPath).catch(() => null);
       if (!dirStat?.isDirectory()) throw new NotFoundException('Target directory not found');

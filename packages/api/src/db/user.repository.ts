@@ -3,7 +3,7 @@ import { NotFoundError } from '@clawix/shared';
 
 import type { PaginatedResponse, PaginationInput } from '@clawix/shared';
 import type { User } from '../generated/prisma/client.js';
-import type { UserRole } from '../generated/prisma/enums.js';
+import type { Department, UserRole } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { buildPaginatedResponse, buildPaginationArgs, handlePrismaError } from './utils.js';
 
@@ -12,6 +12,7 @@ interface CreateUserData {
   readonly name: string;
   readonly passwordHash: string;
   readonly role?: UserRole;
+  readonly department?: Department;
   readonly policyId: string;
   readonly telegramId?: string;
   readonly whatsappJid?: string;
@@ -20,6 +21,7 @@ interface CreateUserData {
 interface UpdateUserData {
   readonly name?: string;
   readonly role?: UserRole;
+  readonly department?: Department;
   readonly isActive?: boolean;
   readonly policyId?: string;
   readonly telegramId?: string | null;
@@ -87,6 +89,7 @@ export class UserRepository {
           passwordHash: data.passwordHash,
           policyId: data.policyId,
           ...(data.role !== undefined ? { role: data.role } : {}),
+          ...(data.department !== undefined ? { department: data.department } : {}),
           ...(data.telegramId !== undefined ? { telegramId: data.telegramId } : {}),
           ...(data.whatsappJid !== undefined ? { whatsappJid: data.whatsappJid } : {}),
         },
@@ -103,6 +106,7 @@ export class UserRepository {
         data: {
           ...(data.name !== undefined ? { name: data.name } : {}),
           ...(data.role !== undefined ? { role: data.role } : {}),
+          ...(data.department !== undefined ? { department: data.department } : {}),
           ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
           ...(data.policyId !== undefined ? { policyId: data.policyId } : {}),
           ...(data.telegramId !== undefined ? { telegramId: data.telegramId } : {}),

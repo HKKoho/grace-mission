@@ -42,3 +42,10 @@ export const updateContentSchema = z.object({
   force: z.boolean().optional(),
 });
 export type UpdateContentInput = z.infer<typeof updateContentSchema>;
+
+export const updateFrontmatterSchema = z.object({
+  path: pathSchema,
+  updates: z.record(z.string().min(1).max(64), z.string().max(1024)),
+  expectedModifiedAt: z.string().datetime('Invalid ISO 8601 date'),
+});
+export type UpdateFrontmatterInput = z.infer<typeof updateFrontmatterSchema>;

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import {
   BarChart3,
+  BookMarked,
   BookOpen,
   Bot,
   CalendarClock,
@@ -13,9 +14,14 @@ import {
   ChevronsUpDown,
   Coins,
   CreditCard,
+  FileCheck,
   FolderOpen,
+  Gamepad2,
   HandHeart,
+  Handshake,
   Heart,
+  HeartHandshake,
+  Megaphone,
   Languages,
   MapPin,
   MonitorPlay,
@@ -31,6 +37,8 @@ import {
   Target,
   User,
   Users,
+  UsersRound,
+  Wallet,
   Wrench,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -63,7 +71,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface NavItem {
+export interface NavItem {
   readonly key: string;
   readonly href: string;
   readonly icon: typeof BookOpen;
@@ -74,19 +82,26 @@ const platformItems: readonly NavItem[] = [
   { key: 'conversations', icon: MessageSquare, href: '/conversations' },
   { key: 'workspace', icon: FolderOpen, href: '/workspace' },
   { key: 'projector', icon: MonitorPlay, href: '/projector' },
+  { key: 'gameStudio', icon: Gamepad2, href: '/game-studio' },
   { key: 'skills', icon: Wrench, href: '/skills' },
   { key: 'agents', icon: Bot, href: '/agents' },
   { key: 'tasks', icon: CalendarClock, href: '/tasks' },
 ];
 
-const ngoItems: readonly NavItem[] = [
+export const ngoItems: readonly NavItem[] = [
   { key: 'programs', href: '/ngo/programs', icon: Target },
+  { key: 'partners', href: '/ngo/partners', icon: Handshake },
   { key: 'donors', href: '/ngo/donors', icon: Heart },
   { key: 'mne', href: '/ngo/mne', icon: BarChart3 },
   { key: 'comms', href: '/ngo/comms', icon: Newspaper },
   { key: 'fieldOps', href: '/ngo/field-ops', icon: MapPin },
   { key: 'incidents', href: '/ngo/incidents', icon: ShieldAlert },
   { key: 'prayer', href: '/ngo/prayer', icon: HandHeart },
+  { key: 'finance', href: '/ngo/finance', icon: Wallet },
+  { key: 'outreach', href: '/ngo/outreach', icon: Megaphone },
+  { key: 'scripture', href: '/ngo/scripture', icon: BookMarked },
+  { key: 'consent', href: '/ngo/consent', icon: FileCheck },
+  { key: 'pastoralCare', href: '/ngo/pastoral-care', icon: HeartHandshake },
 ];
 
 const governanceItems: readonly NavItem[] = [
@@ -100,28 +115,35 @@ const settingsItems: readonly NavItem[] = [
   { key: 'policies', href: '/settings/policies', icon: CreditCard },
   { key: 'channels', href: '/settings/channels', icon: Radio },
   { key: 'providers', href: '/settings/providers', icon: Bot },
+  { key: 'congregationProfile', href: '/settings/congregation-profile', icon: UsersRound },
 ];
 
 const messages = {
   en: {
     brandTagline: 'Gospel Mission AI',
     groupWorkspace: 'Work with Agents',
-    groupNgo: 'Ministry',
     groupGovernance: 'Governance',
     nav: {
       conversations: 'Conversations',
       workspace: 'Workspace',
       projector: 'Projector',
+      gameStudio: 'Game Studio',
       skills: 'Skills',
       agents: 'Agents',
       tasks: 'Scheduled Tasks',
       programs: 'Ministries',
+      partners: 'Partners',
       donors: 'Stewardship',
       mne: 'Kingdom Impact',
       comms: 'Proclamation',
       fieldOps: 'Mission Field',
       incidents: 'Safeguarding',
       prayer: 'Prayer Requests',
+      finance: 'Finance',
+      outreach: 'Outreach',
+      scripture: 'Scripture & Literacy',
+      consent: 'Consent Records',
+      pastoralCare: 'Pastoral Care',
       dashboard: 'Dashboard',
       tokenUsage: 'Token Usage',
       auditLogs: 'Audit Logs',
@@ -130,6 +152,7 @@ const messages = {
       policies: 'Policies',
       channels: 'Channels',
       providers: 'Providers',
+      congregationProfile: 'Congregation Profile',
     },
     lightMode: 'Light mode',
     darkMode: 'Dark mode',
@@ -145,22 +168,28 @@ const messages = {
   'zh-TW': {
     brandTagline: '福音宣教 AI',
     groupWorkspace: '與代理協作',
-    groupNgo: '事工',
     groupGovernance: '治理',
     nav: {
       conversations: '對話',
       workspace: '工作區',
       projector: '投影台',
+      gameStudio: '遊戲工坊',
       skills: '技能',
       agents: '代理',
       tasks: '排程任務',
       programs: '事工計畫',
+      partners: '夥伴機構',
       donors: '財務管理',
       mne: '國度成效',
       comms: '宣揚福音',
       fieldOps: '宣教工場',
       incidents: '安全防護',
       prayer: '代禱事項',
+      finance: '財務',
+      outreach: '外展佈道',
+      scripture: '聖經與識字',
+      consent: '同意紀錄',
+      pastoralCare: '牧養關懷',
       dashboard: '儀表板',
       tokenUsage: 'Token 用量',
       auditLogs: '稽核日誌',
@@ -169,6 +198,7 @@ const messages = {
       policies: '政策',
       channels: '頻道',
       providers: '供應商',
+      congregationProfile: '會眾背景設定',
     },
     lightMode: '淺色模式',
     darkMode: '深色模式',
@@ -184,7 +214,6 @@ const messages = {
 } satisfies Messages<{
   brandTagline: string;
   groupWorkspace: string;
-  groupNgo: string;
   groupGovernance: string;
   nav: Record<string, string>;
   lightMode: string;
@@ -283,34 +312,11 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-            {t.groupNgo}
-          </SidebarGroupLabel>
-          <SidebarMenu>
-            {ngoItems.map((item) => (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive(item.href)}
-                  tooltip={t.nav[item.key as keyof typeof t.nav]}
-                  className={navButtonClass}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{t.nav[item.key as keyof typeof t.nav]}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
             {t.groupGovernance}
           </SidebarGroupLabel>
           <SidebarMenu>
             {governanceItems
-              .filter((item) => !item.adminOnly || user?.role === 'admin')
+              .filter((item) => !item.adminOnly || user?.role === 'super_admin')
               .map((item) => (
                 <SidebarMenuItem key={item.key}>
                   <SidebarMenuButton
@@ -340,7 +346,7 @@ export function AppSidebar() {
                 }
               }}
             >
-              {user?.role === 'admin' && (
+              {user?.role === 'super_admin' && (
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton

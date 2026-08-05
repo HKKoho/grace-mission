@@ -42,6 +42,10 @@ Your job is to understand what the user needs, then either answer directly (for 
 | \`monitoring-evaluation\` | Indicator design, survey forms, data validation, M&E summaries | "Design indicators", "Validate this survey data", "Refresh the M&E dashboard" |
 | \`communications\` | Newsletters, social posts, advocacy briefs, op-eds | "Write the newsletter", "Draft a social post", "Prepare an advocacy brief" |
 | \`field-operations\` | Logistics, risk register, safeguarding records (post-triage only) | "Trip risk assessment", "Procurement options", "Document this safeguarding incident" |
+| \`pastoral-care\` | Pastoral/spiritual support conversations — listening, prayer, Scripture; escalates safety-critical disclosures | "Talk to someone about a member who's struggling", "Route this to pastoral care" |
+| \`finance-assistant\` | Ledger entries, budget-vs-actual reports, ledger export, reconciliation prep — fund-tagged, drafts only | "Log this expense", "How are we doing against budget?", "Export the ledger for our bookkeeper" |
+| \`evangelism-outreach\` | Outreach campaign plans, gospel-proclamation content, church-planting support briefs — voluntary participation always, drafts only | "Plan an outreach event", "Draft a testimony piece", "Help us plant a church in X" |
+| \`scripture-literacy\` | Bible translation project status, Scripture distribution records, mother-tongue literacy programmes | "What's the status of the translation project?", "Log this Scripture distribution", "Plan a literacy programme" |
 
 Each specialist has a system prompt that describes exactly what it can and cannot do. Trust those constraints — do not ask a specialist to do something outside its declared scope.
 
@@ -96,10 +100,32 @@ prayer-requests/
   new/          — submitted via the /prayer command, awaiting review
   praying/      — a human has picked this up
   answered/     — resolved or no longer active
+pastoral-care/
+  records/      — pastoral-care session notes (pseudonyms only)
+  flagged/      — auto-escalated crisis disclosures awaiting human follow-up
+  sampled/      — periodic sample for human quality/safety review
+  keys/         — identity-pseudonym maps (human access only)
 field-ops/
   logistics/    — procurement option lists
   risk/         — trip risk assessments and risk register
   assets/       — asset and vehicle logs
+  trips/        — mission trip rosters, readiness checklists, debrief reports
+finance/
+  ledger/       — fund- and program-tagged expense entries
+  reports/      — budget-vs-actual reports, reconciliation notes
+  exports/      — CSV ledger exports for the NGO's bookkeeping system
+  restricted/   — human access only
+outreach/
+  campaigns/    — outreach campaign plans and proclamation content
+  testimonies/  — testimony drafts (consent: shareable gates publication)
+  church-planting/ — church-planting support briefs
+scripture/
+  translation/  — Bible translation project status by language/portion
+  distribution/ — Scripture distribution records (format, language, community)
+  literacy-programs/ — mother-tongue literacy programme plans (aggregate data only)
+consent/
+  records/      — consent records (pseudonyms only) — the source of truth, not the frontmatter flag
+  keys/         — identity-pseudonym maps (human access only)
 skills/         — reference knowledge packages (read-only)
 .clawix/
   audit.log     — append-only action log
@@ -120,7 +146,7 @@ The \`aria-foundation\` skill contains stakeholder audience profiles, communicat
 
 - Draft a proposal, report, newsletter, or indicator set yourself (delegate to the specialist).
 - Read or relay the contents of \`.pii.md\` files.
-- Access \`incidents/keys/\` or \`finance/restricted/\`.
+- Access \`incidents/keys/\`, \`pastoral-care/keys/\`, \`finance/restricted/\`, or \`consent/keys/\` — those stay human-only.
 - Approve, submit, or publish anything externally.
 - Promise a timeline or commitment to a partner or supporter.`;
 
@@ -154,9 +180,26 @@ const WORKSPACE_FOLDERS = [
   'prayer-requests/new',
   'prayer-requests/praying',
   'prayer-requests/answered',
+  'pastoral-care/records',
+  'pastoral-care/flagged',
+  'pastoral-care/sampled',
+  'pastoral-care/keys',
   'field-ops/logistics',
   'field-ops/risk',
   'field-ops/assets',
+  'field-ops/trips',
+  'finance/ledger',
+  'finance/reports',
+  'finance/exports',
+  'finance/restricted',
+  'outreach/campaigns',
+  'outreach/testimonies',
+  'outreach/church-planting',
+  'scripture/translation',
+  'scripture/distribution',
+  'scripture/literacy-programs',
+  'consent/records',
+  'consent/keys',
   '.clawix',
 ];
 
@@ -259,7 +302,7 @@ async function main() {
   if (!existsSync(readmePath)) {
     writeFileSync(readmePath, `# NGO Workspace
 
-This workspace is managed by Clawix. Five specialist agents operate within it.
+This workspace is managed by Clawix. Ten specialist agents operate within it.
 
 ## Agents
 
@@ -270,6 +313,10 @@ This workspace is managed by Clawix. Five specialist agents operate within it.
 | \`monitoring-evaluation\` | Indicators, survey forms, data validation |
 | \`communications\` | Newsletters, social posts, advocacy briefs |
 | \`field-operations\` | Logistics, risk register, safeguarding records |
+| \`pastoral-care\` | Pastoral/spiritual support conversations, prayer, Scripture |
+| \`finance-assistant\` | Ledger, budget-vs-actual, ledger export, reconciliation prep |
+| \`evangelism-outreach\` | Outreach campaigns, gospel-proclamation content, church-planting briefs |
+| \`scripture-literacy\` | Bible translation status, Scripture distribution, literacy programmes |
 
 ## Key rules
 
@@ -277,6 +324,8 @@ This workspace is managed by Clawix. Five specialist agents operate within it.
 - Files with \`consent: shareable\` in frontmatter may be quoted in external drafts.
 - \`.clawix/audit.log\` is append-only. Never edit it.
 - Agents draft; humans publish, submit, and pay.
+- \`incidents/keys/\`, \`pastoral-care/keys/\`, \`finance/restricted/\`, and \`consent/keys/\` are human access only.
+- \`consent/records/\` is the source of truth for story permissions — a \`consent: shareable\` frontmatter flag with no matching record is unverified.
 
 ## Folder layout
 

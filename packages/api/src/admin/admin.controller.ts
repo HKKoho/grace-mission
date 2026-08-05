@@ -33,7 +33,7 @@ import { AdminService } from './admin.service.js';
 
 @ApiTags('admin')
 @Controller('admin')
-@Roles(UserRole.admin)
+@Roles(UserRole.super_admin)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

@@ -1,4 +1,4 @@
-import type { UserRole } from '../generated/prisma/enums.js';
+import type { Department, UserRole } from '../generated/prisma/enums.js';
 
 export interface SessionCommandContext {
   readonly userId: string;
@@ -7,6 +7,7 @@ export interface SessionCommandContext {
   readonly senderId: string;
   readonly agentDefinitionId: string;
   readonly role: UserRole;
+  readonly department: Department;
   readonly args?: string;
 }
 

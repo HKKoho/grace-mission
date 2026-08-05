@@ -88,12 +88,29 @@ export {
   moveSchema,
   deleteSchema,
   updateContentSchema,
+  updateFrontmatterSchema,
   type CreateEntryInput,
   type RenameInput,
   type MoveInput,
   type DeleteInput,
   type UpdateContentInput,
+  type UpdateFrontmatterInput,
 } from './workspace.schema.js';
+
+export {
+  AGE_BANDS,
+  ECONOMIC_TIERS,
+  MBTI_TYPES,
+  ENNEAGRAM_TYPES,
+  congregationProfileSchema,
+  updateCongregationProfileSchema,
+  type AgeBand,
+  type EconomicTier,
+  type MbtiType,
+  type EnneagramType,
+  type CongregationProfileInput,
+  type UpdateCongregationProfileInput,
+} from './congregation-profile.schema.js';
 
 export {
   skillNameSchema,

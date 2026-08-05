@@ -1,18 +1,41 @@
 import { z } from 'zod';
 
-const userRoleSchema = z.enum(['admin', 'developer', 'viewer']);
+const userRoleSchema = z.enum([
+  'super_admin',
+  'senior_pastor',
+  'pastor',
+  'admin_staff',
+  'ministry_leader',
+  'volunteer',
+  'guest',
+]);
+
+const departmentSchema = z.enum([
+  'all',
+  'program_coordination',
+  'donor_engagement',
+  'monitoring_evaluation',
+  'communications',
+  'field_operations',
+  'pastoral_care',
+  'finance',
+  'outreach',
+  'scripture_literacy',
+]);
 
 export const createUserSchema = z.object({
   email: z.string().email().max(255),
   name: z.string().min(1).max(255),
   password: z.string().min(8).max(128),
   role: userRoleSchema,
+  department: departmentSchema.default('all'),
   policyId: z.string().cuid(),
 });
 
 export const updateUserSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   role: userRoleSchema.optional(),
+  department: departmentSchema.optional(),
   isActive: z.boolean().optional(),
   policyId: z.string().cuid().optional(),
 });

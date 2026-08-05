@@ -11,6 +11,8 @@ import {
   Gamepad2,
   Globe,
   Heart,
+  Mic,
+  MicOff,
   Network,
   Search,
   Send,
@@ -24,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { authFetch } from '@/lib/auth';
 import { useT, type Messages } from '@/lib/i18n';
+import { useSpeechInput } from './use-speech-input';
 
 /* ------------------------------------------------------------------ */
 /*  Slash commands & skills                                            */
@@ -429,6 +432,10 @@ export function ChatInput({
     [t],
   );
   const [value, setValue] = useState('');
+  const handleSpeechResult = useCallback((text: string) => {
+    setValue(text);
+  }, []);
+  const speechInput = useSpeechInput(handleSpeechResult);
   const [mounted, setMounted] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
@@ -645,6 +652,28 @@ export function ChatInput({
               }
             }}
           />
+          {speechInput.supported && (
+            <Button
+              type="button"
+              variant={speechInput.listening ? 'default' : 'secondary'}
+              size="icon"
+              className="size-8 shrink-0 rounded-full"
+              disabled={disabled || !isConnected}
+              onClick={() => {
+                if (speechInput.listening) {
+                  speechInput.stop();
+                } else {
+                  speechInput.start();
+                }
+              }}
+            >
+              {speechInput.listening ? (
+                <MicOff className="size-4 animate-pulse" />
+              ) : (
+                <Mic className="size-4" />
+              )}
+            </Button>
+          )}
           <Button
             size="icon"
             className="size-8 shrink-0 rounded-full"

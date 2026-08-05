@@ -1,10 +1,11 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import type { UserRole } from '../generated/prisma/enums.js';
 
 import { TokensService } from './tokens.service.js';
 
 interface AuthRequest {
-  user: { sub: string; email: string; role: string; policyName: string };
+  user: { sub: string; email: string; role: UserRole; policyName: string };
 }
 
 @ApiTags('tokens')
@@ -27,7 +28,7 @@ export class TokensController {
   @Get('per-user/:userId/agents')
   getUserAgentBreakdown(@Param('userId') userId: string, @Req() req: AuthRequest) {
     const { user } = req;
-    const targetUserId = user.role === 'admin' ? userId : user.sub;
+    const targetUserId = user.role === 'super_admin' ? userId : user.sub;
     return this.tokensService.getUserAgentBreakdown(targetUserId);
   }
 
@@ -40,7 +41,7 @@ export class TokensController {
     const { user } = req;
     const validPeriod =
       period === 'daily' || period === 'weekly' || period === 'monthly' ? period : 'daily';
-    const targetUserId = user.role === 'admin' ? userId : user.sub;
+    const targetUserId = user.role === 'super_admin' ? userId : user.sub;
     return this.tokensService.getUsageOverTime(validPeriod, targetUserId);
   }
 }

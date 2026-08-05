@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import anime from 'animejs';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/app-sidebar';
+import { MinistriesNav } from '@/components/dashboard/ministries-nav';
 import { EASING, DURATION } from '@/lib/anime';
 
 function AnimatedContent({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export default function DashboardLayout({
     <SidebarProvider>
       <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-2 border-b bg-background px-4">
         <SidebarTrigger className="-ml-1" />
+        <MinistriesNav className="ml-auto" />
       </header>
       <AppSidebar />
       <SidebarInset>

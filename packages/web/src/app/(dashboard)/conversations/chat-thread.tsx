@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, Bot, Copy, Loader2 } from 'lucide-react';
+import { ArrowDown, Bot, Copy, Loader2, Square, Volume2, VolumeX } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -10,6 +10,8 @@ import type { BubbleState, ToolProgressMode } from '@clawix/shared';
 import { Button } from '@/components/ui/button';
 import { useT, type Messages } from '@/lib/i18n';
 import type { ChatMessage } from './use-chat';
+import { useSpeechReader, stripMarkdownForSpeech } from './use-speech-reader';
+import { useAutoRead } from './use-auto-read';
 
 const threadMessages = {
   en: {
@@ -17,18 +19,21 @@ const threadMessages = {
     yesterday: 'Yesterday',
     thinking: 'Thinking...',
     loadOlder: 'Load older messages',
+    autoRead: 'Read replies aloud',
   },
   'zh-TW': {
     today: '今天',
     yesterday: '昨天',
     thinking: '思考中...',
     loadOlder: '載入較早的訊息',
+    autoRead: '朗讀回覆',
   },
 } satisfies Messages<{
   today: string;
   yesterday: string;
   thinking: string;
   loadOlder: string;
+  autoRead: string;
 }>;
 
 /* ------------------------------------------------------------------ */
@@ -97,7 +102,17 @@ function dedentCodeBlocks(md: string): string {
   );
 }
 
-function AgentMessage({ content, createdAt }: { content: string; createdAt: string }) {
+function AgentMessage({
+  content,
+  createdAt,
+  isSpeaking,
+  onToggleSpeak,
+}: {
+  content: string;
+  createdAt: string;
+  isSpeaking?: boolean;
+  onToggleSpeak?: () => void;
+}) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-start gap-4">
@@ -122,6 +137,20 @@ function AgentMessage({ content, createdAt }: { content: string; createdAt: stri
         >
           <Copy className="size-3.5 text-muted-foreground" />
         </Button>
+        {onToggleSpeak && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={onToggleSpeak}
+          >
+            {isSpeaking ? (
+              <Square className="size-3.5 text-muted-foreground" />
+            ) : (
+              <Volume2 className="size-3.5 text-muted-foreground" />
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -166,6 +195,9 @@ export function ChatThread({
   toolProgressMode,
 }: ChatThreadProps) {
   const t = useT(threadMessages);
+  const speechReader = useSpeechReader();
+  const { autoRead, toggleAutoRead } = useAutoRead(messages, loading, speechReader);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevHeightRef = useRef(0);
@@ -342,7 +374,22 @@ export function ChatThread({
                 ) : (
                   <>
                     {msg.content.trim().length > 0 && (
-                      <AgentMessage content={msg.content} createdAt={msg.createdAt} />
+                      <AgentMessage
+                        content={msg.content}
+                        createdAt={msg.createdAt}
+                        isSpeaking={speechReader.supported && speechReader.speakingId === msg.id}
+                        onToggleSpeak={
+                          speechReader.supported
+                            ? () => {
+                                if (speechReader.speakingId === msg.id) {
+                                  speechReader.stop();
+                                } else {
+                                  speechReader.speak(msg.id, stripMarkdownForSpeech(msg.content));
+                                }
+                              }
+                            : undefined
+                        }
+                      />
                     )}
                     {hasToolCalls &&
                       msg.toolCalls!.map((tc, i) => {
@@ -381,6 +428,19 @@ export function ChatThread({
           onClick={scrollToBottom}
         >
           <ArrowDown className="size-4" />
+        </Button>
+      )}
+
+      {/* Auto-read replies toggle */}
+      {speechReader.supported && (
+        <Button
+          variant={autoRead ? 'default' : 'secondary'}
+          size="icon"
+          className="absolute top-4 right-6 z-10 size-9 cursor-pointer rounded-full shadow-lg"
+          onClick={toggleAutoRead}
+          title={t.autoRead}
+        >
+          {autoRead ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
         </Button>
       )}
     </div>
