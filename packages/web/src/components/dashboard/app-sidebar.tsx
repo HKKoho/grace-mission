@@ -20,6 +20,7 @@ import {
   HandHeart,
   Handshake,
   Heart,
+  HeartHandshake,
   Megaphone,
   Languages,
   MapPin,
@@ -36,6 +37,7 @@ import {
   Target,
   User,
   Users,
+  UsersRound,
   Wallet,
   Wrench,
 } from 'lucide-react';
@@ -99,6 +101,7 @@ export const ngoItems: readonly NavItem[] = [
   { key: 'outreach', href: '/ngo/outreach', icon: Megaphone },
   { key: 'scripture', href: '/ngo/scripture', icon: BookMarked },
   { key: 'consent', href: '/ngo/consent', icon: FileCheck },
+  { key: 'pastoralCare', href: '/ngo/pastoral-care', icon: HeartHandshake },
 ];
 
 const governanceItems: readonly NavItem[] = [
@@ -112,6 +115,7 @@ const settingsItems: readonly NavItem[] = [
   { key: 'policies', href: '/settings/policies', icon: CreditCard },
   { key: 'channels', href: '/settings/channels', icon: Radio },
   { key: 'providers', href: '/settings/providers', icon: Bot },
+  { key: 'congregationProfile', href: '/settings/congregation-profile', icon: UsersRound },
 ];
 
 const messages = {
@@ -139,6 +143,7 @@ const messages = {
       outreach: 'Outreach',
       scripture: 'Scripture & Literacy',
       consent: 'Consent Records',
+      pastoralCare: 'Pastoral Care',
       dashboard: 'Dashboard',
       tokenUsage: 'Token Usage',
       auditLogs: 'Audit Logs',
@@ -147,6 +152,7 @@ const messages = {
       policies: 'Policies',
       channels: 'Channels',
       providers: 'Providers',
+      congregationProfile: 'Congregation Profile',
     },
     lightMode: 'Light mode',
     darkMode: 'Dark mode',
@@ -183,6 +189,7 @@ const messages = {
       outreach: '外展佈道',
       scripture: '聖經與識字',
       consent: '同意紀錄',
+      pastoralCare: '牧養關懷',
       dashboard: '儀表板',
       tokenUsage: 'Token 用量',
       auditLogs: '稽核日誌',
@@ -191,6 +198,7 @@ const messages = {
       policies: '政策',
       channels: '頻道',
       providers: '供應商',
+      congregationProfile: '會眾背景設定',
     },
     lightMode: '淺色模式',
     darkMode: '深色模式',

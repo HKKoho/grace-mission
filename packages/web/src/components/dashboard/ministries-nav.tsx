@@ -23,7 +23,7 @@ const categories: readonly MinistryCategory[] = [
   { key: 'programPartners', itemKeys: ['programs', 'partners'] },
   { key: 'financeStewardship', itemKeys: ['donors', 'finance'] },
   { key: 'missionOutreach', itemKeys: ['fieldOps', 'outreach', 'comms', 'scripture'] },
-  { key: 'careGovernance', itemKeys: ['prayer', 'incidents', 'mne', 'consent'] },
+  { key: 'careGovernance', itemKeys: ['prayer', 'incidents', 'mne', 'consent', 'pastoralCare'] },
 ];
 
 const itemsByKey = new Map<string, NavItem>(ngoItems.map((item) => [item.key, item]));
@@ -49,6 +49,7 @@ const messages = {
       outreach: 'Outreach',
       scripture: 'Scripture & Literacy',
       consent: 'Consent Records',
+      pastoralCare: 'Pastoral Care',
     },
   },
   'zh-TW': {
@@ -71,6 +72,7 @@ const messages = {
       outreach: '外展佈道',
       scripture: '聖經與識字',
       consent: '同意紀錄',
+      pastoralCare: '牧養關懷',
     },
   },
 } satisfies Messages<{

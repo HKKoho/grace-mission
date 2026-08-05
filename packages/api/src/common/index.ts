@@ -5,6 +5,12 @@ export {
   buildCorsOptions,
 } from './security.config.js';
 export { ZodValidationPipe } from './zod-validation.pipe.js';
+export {
+  parseSimpleYaml,
+  parseFrontmatter,
+  stripFrontmatter,
+  mergeFrontmatter,
+} from './frontmatter.js';
 export { PolicyThrottlerGuard } from './policy-throttler.guard.js';
 export {
   resolvePolicyLimit,

@@ -15,6 +15,7 @@ import { UserAgentRepository } from '../db/user-agent.repository.js';
 import { resolveWorkspacePaths } from '../engine/workspace-resolver.js';
 import type { DirectoryListing, FileContent, FileEntry, FileType } from '@clawix/shared';
 import { Department, UserRole } from '../generated/prisma/enums.js';
+import { mergeFrontmatter } from '../common/frontmatter.js';
 import { ScopedFs } from './scoped-fs.js';
 
 const logger = createLogger('workspace');
@@ -361,6 +362,31 @@ export class WorkspaceService {
       size: newStat.size,
       modifiedAt: newStat.mtime.toISOString(),
     };
+  }
+
+  async updateFrontmatter(
+    userId: string,
+    filePath: string,
+    updates: Record<string, string>,
+    expectedModifiedAt: string,
+    role: UserRole,
+    department: Department,
+  ): Promise<{ path: string; size: number; modifiedAt: string }> {
+    const file = await this.readFile(userId, filePath, role, department);
+    if (file.content === null) {
+      throw new BadRequestException('File content is not readable as text');
+    }
+
+    const merged = mergeFrontmatter(file.content, updates);
+    return this.updateFileContent(
+      userId,
+      filePath,
+      merged,
+      expectedModifiedAt,
+      false,
+      role,
+      department,
+    );
   }
 
   async createEntry(

@@ -31,6 +31,7 @@ import {
   moveSchema,
   deleteSchema,
   updateContentSchema,
+  updateFrontmatterSchema,
 } from '@clawix/shared';
 
 @ApiTags('workspace')
@@ -96,6 +97,22 @@ export class WorkspaceController {
       parsed.content,
       parsed.expectedModifiedAt,
       parsed.force ?? false,
+      req.user.role,
+      req.user.department,
+    );
+  }
+
+  @Patch('files/frontmatter')
+  async updateFrontmatter(
+    @Req() req: { user: JwtPayload },
+    @Body() body: unknown,
+  ): Promise<UpdateContentResponse> {
+    const parsed = updateFrontmatterSchema.parse(body);
+    return this.workspaceService.updateFrontmatter(
+      req.user.sub,
+      parsed.path,
+      parsed.updates,
+      parsed.expectedModifiedAt,
       req.user.role,
       req.user.department,
     );
