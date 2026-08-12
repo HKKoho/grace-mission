@@ -128,15 +128,15 @@ pnpm run install:clawix
 
 The installer is interactive. Answer the prompts like this:
 
-| Prompt | Answer |
-| --- | --- |
-| Deployment mode | `1` (production) |
-| Provider selection | pick one or more (e.g. `1` for Anthropic) + paste your API key |
-| Default model | accept the default, or pick a cheaper one — see cost tip below |
-| Public host or IP | `gracemission.aibyml.uk` (no `https://`, no port) |
-| Use HTTPS? | `y` |
-| Extra CORS origins | leave blank |
-| Admin email / password / name | your admin login |
+| Prompt                        | Answer                                                         |
+| ----------------------------- | -------------------------------------------------------------- |
+| Deployment mode               | `1` (production)                                               |
+| Provider selection            | pick one or more (e.g. `1` for Anthropic) + paste your API key |
+| Default model                 | accept the default, or pick a cheaper one — see cost tip below |
+| Public host or IP             | `gracemission.aibyml.uk` (no `https://`, no port)              |
+| Use HTTPS?                    | `y`                                                            |
+| Extra CORS origins            | leave blank                                                    |
+| Admin email / password / name | your admin login                                               |
 
 > **Cost tip:** the installer defaults to `gpt-4o` for OpenAI (or
 > `claude-sonnet-4-5` for Anthropic). For most conversational use, a cheaper
@@ -149,13 +149,15 @@ The installer is interactive. Answer the prompts like this:
 > `gpt-4o` or `gpt-4o-mini` enabled — this depends on your account's billing
 > tier and can silently differ from what you'd expect. Before trusting the
 > default, check what your key can actually reach:
+>
 > ```bash
 > curl -s https://api.openai.com/v1/models -H "Authorization: Bearer $OPENAI_API_KEY" \
 >   | python3 -c "import json,sys; print([m['id'] for m in json.load(sys.stdin)['data']])"
 > ```
+>
 > If `gpt-4o`/`gpt-4o-mini` aren't in that list, use whatever your project
 > does have (e.g. `gpt-4-turbo`) instead. Importantly: changing
-> `DEFAULT_LLM_MODEL` in `.env` only affects agents seeded *after* the
+> `DEFAULT_LLM_MODEL` in `.env` only affects agents seeded _after_ the
 > change — every agent already created keeps whatever model was baked in at
 > creation time in its own `AgentDefinition.model` row. If you fix the
 > default after agents already exist, you also need to update each existing
@@ -213,12 +215,12 @@ reach directly.
 >
 > 1. **The WebSocket route is easy to forget.** If you only add the
 >    `/api/*` block and skip `/ws/*`, the chat WebSocket falls through to the
->    catch-all `reverse_proxy localhost:3002` (the *web* container, which has
+>    catch-all `reverse_proxy localhost:3002` (the _web_ container, which has
 >    no such route) and every `wss://.../ws/chat` connection fails. Symptom:
 >    browser console shows `ERR_SSL_PROTOCOL_ERROR` if the frontend was still
 >    pointed at a raw port, or a silent connect failure if it's pointed at
 >    the bare domain without this block.
-> 2. **`handle_path /api/*` *strips* the `/api` prefix** before forwarding to
+> 2. **`handle_path /api/*` _strips_ the `/api` prefix** before forwarding to
 >    the API container. Combined with the workspace controller's own
 >    `api/v1/workspace` route prefix, this means `NEXT_PUBLIC_API_URL` must
 >    be set to `https://gracemission.aibyml.uk/api` (**with** the `/api`
@@ -302,6 +304,7 @@ exists.
 > `root:root`, and `setup-ngo.mjs` fails with `EACCES: permission denied`.
 > Fix by reclaiming ownership before re-running (no `sudo` on the host
 > needed — this uses the `docker` group instead):
+>
 > ```bash
 > docker run --rm -v "$(pwd)/data:/data" alpine chown -R 1000:1000 /data
 > node scripts/setup-ngo.mjs
@@ -345,67 +348,78 @@ sudo systemctl enable docker
 ## Troubleshooting
 
 ### API fails to start
+
 ```bash
 docker compose -f docker-compose.prod.yml logs api
 ```
+
 Common causes: missing env var, Postgres not ready yet, bad provider API key.
 
 ### Agents fail to spawn
+
 Confirm the Docker daemon is reachable and the agent image exists:
+
 ```bash
 docker image ls clawix-agent:latest
 docker ps
 ```
 
 ### WebSocket shows "disconnected" in the dashboard
+
 Usually a proxy/Cloudflare issue — confirm Cloudflare DNS is set to **DNS
 only** (grey cloud), not proxied, and that the Caddyfile blocks in Step 5
 match your domain exactly. Also check that the Caddyfile actually has the
 `/ws/*` block, not just `/api/*` (see the callout in Step 5) — a plain
 `curl` to the WebSocket path always 404s regardless (it only upgrades on a
 real WS handshake), so that's not a useful test; use:
+
 ```bash
 curl -i -N --http1.1 -H "Connection: Upgrade" -H "Upgrade: websocket" \
   -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
   https://gracemission.aibyml.uk/ws/chat
 ```
+
 `HTTP/1.1 101 Switching Protocols` means routing is fine; anything else
 (404, 502, or a TLS error) means Caddy isn't reaching the API on that path.
 
 ### Repeated `401 "No refresh token"` errors / users get logged out silently
+
 The refresh-token cookie's `Path` is set server-side, but the browser only
-ever honors it against the URL *it* actually requested. If your reverse
+ever honors it against the URL _it_ actually requested. If your reverse
 proxy rewrites paths (e.g. this repo's `handle_path /api/*` strips the
 prefix before forwarding), a cookie scoped to a path the browser never
 calls directly (e.g. bare `/auth`) gets silently dropped and every refresh
 fails. Confirm what's actually being set:
+
 ```bash
 curl -sk -i -X POST https://gracemission.aibyml.uk/api/auth/login \
   -H "Content-Type: application/json" -d '{"email":"...","password":"..."}' \
   | grep -i set-cookie
 ```
+
 The `Path=` attribute should be `/` (or at minimum match every prefix the
 browser actually calls this API through) — this repo's `auth.constants.ts`
 already sets `REFRESH_COOKIE_PATH = '/'` for exactly this reason.
 
 ### Agent replies fail with `401`/`403` from the LLM provider despite a correct-looking `.env`
+
 Two independent traps, both covered above (Step 4's model-access callout
 and Step 7's provider-key callout) — in short: **`.env` is not authoritative
 after first boot.** `DEFAULT_LLM_MODEL` only affects newly-seeded agents
 (each `AgentDefinition` row keeps its own `model` value once created), and
 `OPENAI_API_KEY`/`ANTHROPIC_API_KEY` only seed the DB's `ProviderConfig`
 once, ever. If something looks wrong at the LLM-call layer, check the
-*database* state (agent's `model` column, Settings → Providers), not just
+_database_ state (agent's `model` column, Settings → Providers), not just
 `.env`.
 
 ---
 
 ## Cost recap
 
-| Item | Monthly |
-|---|---|
-| Hetzner CX22 VPS | ~$4 |
-| Domain (amortized, if newly registered) | ~$1 |
-| Caddy, Docker, TLS | $0 |
-| **Infra total** | **~$5/mo** |
-| LLM API usage | variable — dominates the bill; pick a cheap default model |
+| Item                                    | Monthly                                                   |
+| --------------------------------------- | --------------------------------------------------------- |
+| Hetzner CX22 VPS                        | ~$4                                                       |
+| Domain (amortized, if newly registered) | ~$1                                                       |
+| Caddy, Docker, TLS                      | $0                                                        |
+| **Infra total**                         | **~$5/mo**                                                |
+| LLM API usage                           | variable — dominates the bill; pick a cheap default model |

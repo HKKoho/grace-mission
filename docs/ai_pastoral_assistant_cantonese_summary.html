@@ -1,290 +1,329 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-HK">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 牧人助理研究方向摘要</title>
-  <style>
-    :root {
-      --bg: #fffaf2;
-      --panel: #ffffff;
-      --text: #2f2a24;
-      --muted: #6f655b;
-      --accent: #d98b4a;
-      --accent-soft: #fff0df;
-      --accent-2: #f2c57c;
-      --border: #f0dfcb;
-      --quote: #fff7ea;
-      --shadow: 0 12px 30px rgba(111, 86, 54, 0.08);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 牧人助理研究方向摘要</title>
+    <style>
+      :root {
+        --bg: #fffaf2;
+        --panel: #ffffff;
+        --text: #2f2a24;
+        --muted: #6f655b;
+        --accent: #d98b4a;
+        --accent-soft: #fff0df;
+        --accent-2: #f2c57c;
+        --border: #f0dfcb;
+        --quote: #fff7ea;
+        --shadow: 0 12px 30px rgba(111, 86, 54, 0.08);
+      }
 
-    * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
 
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK",
-                   "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, #fff3dc 0, transparent 34%),
-        radial-gradient(circle at top right, #fff8e9 0, transparent 28%),
-        var(--bg);
-      color: var(--text);
-      line-height: 1.85;
-    }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang HK', 'Noto Sans TC',
+          'Microsoft JhengHei', Arial, sans-serif;
+        background:
+          radial-gradient(circle at top left, #fff3dc 0, transparent 34%),
+          radial-gradient(circle at top right, #fff8e9 0, transparent 28%), var(--bg);
+        color: var(--text);
+        line-height: 1.85;
+      }
 
-    .wrap {
-      width: min(920px, calc(100% - 32px));
-      margin: 48px auto 72px;
-    }
+      .wrap {
+        width: min(920px, calc(100% - 32px));
+        margin: 48px auto 72px;
+      }
 
-    .hero, .section {
-      background: rgba(255,255,255,0.94);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-    }
+      .hero,
+      .section {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+      }
 
-    .hero {
-      padding: 34px 34px 28px;
-      margin-bottom: 22px;
-    }
+      .hero {
+        padding: 34px 34px 28px;
+        margin-bottom: 22px;
+      }
 
-    .eyebrow {
-      display: inline-block;
-      font-size: 0.86rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: #8a5d35;
-      background: var(--accent-soft);
-      border: 1px solid #f2d3b2;
-      padding: 6px 10px;
-      border-radius: 999px;
-      margin-bottom: 16px;
-    }
+      .eyebrow {
+        display: inline-block;
+        font-size: 0.86rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #8a5d35;
+        background: var(--accent-soft);
+        border: 1px solid #f2d3b2;
+        padding: 6px 10px;
+        border-radius: 999px;
+        margin-bottom: 16px;
+      }
 
-    h1 {
-      margin: 0 0 14px;
-      font-size: clamp(2rem, 4vw, 3rem);
-      line-height: 1.2;
-      letter-spacing: -0.02em;
-    }
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+      }
 
-    .intro {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.05rem;
-    }
+      .intro {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
 
-    a {
-      color: #b8662f;
-      text-decoration-thickness: 1.5px;
-      text-underline-offset: 3px;
-    }
+      a {
+        color: #b8662f;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+      }
 
-    .section {
-      padding: 30px 32px;
-      margin-top: 18px;
-    }
+      .section {
+        padding: 30px 32px;
+        margin-top: 18px;
+      }
 
-    h2 {
-      margin: 0 0 14px;
-      font-size: 1.38rem;
-      line-height: 1.35;
-      color: #7c4e2a;
-    }
+      h2 {
+        margin: 0 0 14px;
+        font-size: 1.38rem;
+        line-height: 1.35;
+        color: #7c4e2a;
+      }
 
-    p { margin: 0 0 14px; }
-    p:last-child { margin-bottom: 0; }
+      p {
+        margin: 0 0 14px;
+      }
+      p:last-child {
+        margin-bottom: 0;
+      }
 
-    .highlight {
-      background: linear-gradient(180deg, transparent 58%, #ffe2b9 58%);
-      font-weight: 700;
-    }
+      .highlight {
+        background: linear-gradient(180deg, transparent 58%, #ffe2b9 58%);
+        font-weight: 700;
+      }
 
-    .flow {
-      background: var(--quote);
-      border: 1px solid #f2dfc4;
-      border-left: 5px solid var(--accent);
-      border-radius: 14px;
-      padding: 16px 18px;
-      margin: 16px 0;
-      font-weight: 650;
-      color: #51463c;
-    }
+      .flow {
+        background: var(--quote);
+        border: 1px solid #f2dfc4;
+        border-left: 5px solid var(--accent);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin: 16px 0;
+        font-weight: 650;
+        color: #51463c;
+      }
 
-    .questions {
-      background: #fffdf8;
-      border: 1px dashed #e5bf8a;
-      border-radius: 16px;
-      padding: 18px 20px;
-      margin-top: 12px;
-    }
+      .questions {
+        background: #fffdf8;
+        border: 1px dashed #e5bf8a;
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-top: 12px;
+      }
 
-    .questions strong {
-      color: #6f4727;
-    }
+      .questions strong {
+        color: #6f4727;
+      }
 
-    .footer-note {
-      margin-top: 22px;
-      padding: 20px 22px;
-      border-radius: 18px;
-      background: linear-gradient(135deg, #fff0db, #fff8ec);
-      border: 1px solid #efd5b0;
-    }
+      .footer-note {
+        margin-top: 22px;
+        padding: 20px 22px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #fff0db, #fff8ec);
+        border: 1px solid #efd5b0;
+      }
 
-    @media (max-width: 640px) {
-      .wrap { margin-top: 22px; width: min(100% - 20px, 920px); }
-      .hero, .section { border-radius: 16px; }
-      .hero { padding: 24px 22px; }
-      .section { padding: 24px 22px; }
-      body { line-height: 1.75; }
-    }
+      @media (max-width: 640px) {
+        .wrap {
+          margin-top: 22px;
+          width: min(100% - 20px, 920px);
+        }
+        .hero,
+        .section {
+          border-radius: 16px;
+        }
+        .hero {
+          padding: 24px 22px;
+        }
+        .section {
+          padding: 24px 22px;
+        }
+        body {
+          line-height: 1.75;
+        }
+      }
 
-    @media print {
-      body { background: white; }
-      .wrap { width: 100%; margin: 0; }
-      .hero, .section { box-shadow: none; break-inside: avoid; }
-    }
-  </style>
-</head>
-<body>
-  <main class="wrap">
-    <section class="hero">
-      <div class="eyebrow">Research Notes</div>
-      <h1>AI 牧人助理研究方向摘要</h1>
-      <p class="intro">
-        I saw this paper
-        <a href="https://arxiv.org/html/2604.03356v1" target="_blank" rel="noopener noreferrer">
-          https://arxiv.org/html/2604.03356v1
-        </a>
-        and used chatgpt to summarise the thoughts below
-      </p>
-    </section>
+      @media print {
+        body {
+          background: white;
+        }
+        .wrap {
+          width: 100%;
+          margin: 0;
+        }
+        .hero,
+        .section {
+          box-shadow: none;
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <div class="eyebrow">Research Notes</div>
+        <h1>AI 牧人助理研究方向摘要</h1>
+        <p class="intro">
+          I saw this paper
+          <a href="https://arxiv.org/html/2604.03356v1" target="_blank" rel="noopener noreferrer">
+            https://arxiv.org/html/2604.03356v1
+          </a>
+          and used chatgpt to summarise the thoughts below
+        </p>
+      </section>
 
-    <section class="section">
-      <h2>1. 由「Christian chatbot」轉向更值得研究嘅問題</h2>
-      <p>
-        現時其實已經有唔少類似 <strong>Gloo/Faith Assistant、Magisterium AI、Creed、Bible Chat</strong>
-        等項目，嘗試建立「Christian chatbot」，部分更加已經擁有相當大型嘅神學及教會資料庫。
-        因此，我哋真正值得研究嘅問題，可能唔再只係 <span class="highlight">「點樣整一個識好多基督教知識嘅 AI？」</span>，
-        而係點樣建立一個適合華人基督徒、以人為本嘅 <strong>AI 牧人助理</strong>：
-        既有聖經及神學基礎，又能理解華人文化同年輕人處境，而且定位上並非取代牧者，
-        而係成為連接人與人之間牧養關係嘅橋樑。
-      </p>
-      <p>
-        最終衡量成功嘅標準唔應該只係「AI 有冇答啱」，而係一次對話有冇將一個人帶向
-        <strong>更健康嘅屬靈生命、教會群體，以及適當嘅真人牧養關係</strong>。
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>2. FAI-C 同「Procedural Secularism」</h2>
-      <p>
-        <strong>FAI-C（Flourishing AI Benchmark: Christian）</strong> 論文就為呢個研究方向提供咗一個好有用嘅理論同方法框架。
-        當中提出嘅 <strong>「Procedural Secularism」</strong> 指出，主流 AI 即使提供一個安全、友善、關懷人嘅答案，
-        背後仍然可能預設咗某種「何謂美好人生（the good life）」嘅價值觀，例如較著重個人自主、
-        主觀幸福感及 therapeutic language，同時避免作出明確嘅神學或形而上立場。
-      </p>
-      <div class="flow">
-        所以我哋需要問嘅唔只係「呢個建議有冇問題？」，
-        而係：<strong>「呢個答案背後，究竟預設緊一種點樣嘅美好人生？」</strong>
-      </div>
-      <p>
-        一個聽落好有同理心嘅答案，仍然可能遺漏基督教信仰中重要嘅脈絡，例如
-        <strong>教會 → 基督的身體 → 信仰群體 → 門徒訓練 → 復和 → 忍耐 → 彼此守望／問責</strong>；
-        而一個有經驗嘅牧者，可能唔會立即畀答案，反而會先透過關懷式追問，
-        了解對方真正面對緊嘅問題。
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>3. 「Digital Catechesis」：AI 作為私人世界觀對話者</h2>
-      <p>
-        呢點亦連接到論文所講嘅 <strong>「Digital Catechesis（數碼教理／信仰塑造）」</strong>。
-        對於由細已經生活喺互聯網同 AI 環境嘅年輕人，AI 可以成為一個隨時可接觸、私密，
-        而且逐漸被信任嘅 <strong>「私人世界觀對話者（private worldview interlocutor）」</strong>。
-      </p>
-      <p>
-        尤其係信仰懷疑、人際關係、性、苦難、道德抉擇、教會創傷等佢哋未必敢直接問牧者嘅問題，
-        AI 好可能成為第一個對話對象。因此，即使每一個答案本身都冇明顯「危險」，
-        長期反覆對話仍然可能逐步塑造一個年輕人嘅價值觀、道德想像同信仰理解。
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>4. 由 FAI-C 發展我哋自己嘅 Pastoral AI Evaluation Framework</h2>
-      <p>
-        因此，FAI-C 可以成為我哋建立自己 <strong>Pastoral AI Evaluation Framework（牧養 AI 評估框架）</strong>
-        嘅起點，例如初步包括：
-        <strong>(1) 聖經基礎、(2) 神學一致性、(3) 牧養智慧、(4) 華人文化適切性、
-        (5) 青少年適切性、(6) 心理／安全適切性、(7) 知識及資訊可靠性、
-        (8) 導向真人／教會群體關係嘅能力。</strong>
-      </p>
-      <p>
-        而且唔應該只做 single-turn「一問一答」測試，而可以進一步發展成
-        <strong>multi-turn evaluation</strong>，將整段對話納入評估，觀察 AI 隨住逐步了解一個年輕人真正處境之後，
-        能否持續保持神學一致性、文化敏感度同合適嘅牧養判斷。
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>5. 挑戰「資料庫夠大就等於 Christian alignment 足夠」</h2>
-      <p>
-        呢個方向亦挑戰咗一個重要假設：
-        <span class="highlight">「有足夠大、足夠好嘅基督教資料庫，就自然會產生足夠 Christian-aligned 嘅 AI。」</span>
-      </p>
-      <p>
-        即使 RAG 成功搵到正確經文、講道或神學材料，最後由模型整合、理解同回應時，
-        仍然可能加入同原本信仰框架不一致嘅價值假設。
-      </p>
-      <div class="flow">
-        所以評估唔可以只問「AI 有冇搵啱基督教資料？」，
-        更加要問：<strong>「如果係一個有智慧、有經驗嘅牧者，面對眼前呢一個人、呢一個具體處境，佢真係會咁樣回應嗎？」</strong>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>6. Epistemic Humility：知道「確定性」去到邊度為止</h2>
-      <p>
-        另一個值得加入嘅重要維度係 <strong>Epistemic Humility（知識／認知上的謙卑）</strong>。
-        Christian alignment 唔應該等於「所有神學問題都畀出最肯定嘅答案」。
-        聖經明確教導、宗派詮釋、牧養判斷，以及人根本無法知道嘅事情，需要被清楚區分。
-      </p>
-      <p>
-        有時一個負責任嘅基督教答案正正係：<strong>「我哋唔知道。」</strong>
-        人能夠理解上帝嘅知識同智慧始終有限，所以 AI 能否知道
-        <strong>「確定性去到邊度為止」</strong>，本身就可以成為一個非常值得研究嘅評估問題。
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>7. 唔需要假裝神學中立</h2>
-      <p>
-        最後，我哋亦唔需要假裝存在完全嘅「神學中立」。相反，研究可以清楚、透明地定義：
-      </p>
-      <div class="questions">
-        <p><strong>我哋所講嘅「Christian」係乜？</strong></p>
-        <p><strong>邊啲教義屬於核心基礎？</strong></p>
-        <p><strong>邊啲議題容許基督徒有合理分歧？</strong></p>
-        <p><strong>乜嘢係聖經本身、乜嘢係神學詮釋、乜嘢只係牧養判斷？</strong></p>
-      </div>
-      <p style="margin-top:14px;">
-        將呢啲界線明確記錄，本身亦可以成為研究方法嘅重要部分。
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>8. 核心研究問題</h2>
-      <div class="footer-note">
+      <section class="section">
+        <h2>1. 由「Christian chatbot」轉向更值得研究嘅問題</h2>
         <p>
-          <strong>一個使用 RAG 嘅 AI 牧人助理，喺面對華語年輕人真實而且 multi-turn 嘅對話時，
-          能否持續提供有聖經基礎、神學一致、文化合適、具牧養智慧，而且最終導向真人及基督教群體關係嘅回應？</strong>
+          現時其實已經有唔少類似
+          <strong>Gloo/Faith Assistant、Magisterium AI、Creed、Bible Chat</strong>
+          等項目，嘗試建立「Christian chatbot」，部分更加已經擁有相當大型嘅神學及教會資料庫。
+          因此，我哋真正值得研究嘅問題，可能唔再只係
+          <span class="highlight">「點樣整一個識好多基督教知識嘅 AI？」</span>，
+          而係點樣建立一個適合華人基督徒、以人為本嘅 <strong>AI 牧人助理</strong>：
+          既有聖經及神學基礎，又能理解華人文化同年輕人處境，而且定位上並非取代牧者，
+          而係成為連接人與人之間牧養關係嘅橋樑。
         </p>
         <p>
-          <strong>而同一批情境之下，呢個系統同未經特別調整嘅 Frontier Model 相比，究竟有幾大分別？</strong>
+          最終衡量成功嘅標準唔應該只係「AI 有冇答啱」，而係一次對話有冇將一個人帶向
+          <strong>更健康嘅屬靈生命、教會群體，以及適當嘅真人牧養關係</strong>。
         </p>
-      </div>
-    </section>
-  </main>
-</body>
+      </section>
+
+      <section class="section">
+        <h2>2. FAI-C 同「Procedural Secularism」</h2>
+        <p>
+          <strong>FAI-C（Flourishing AI Benchmark: Christian）</strong>
+          論文就為呢個研究方向提供咗一個好有用嘅理論同方法框架。 當中提出嘅
+          <strong>「Procedural Secularism」</strong> 指出，主流 AI
+          即使提供一個安全、友善、關懷人嘅答案， 背後仍然可能預設咗某種「何謂美好人生（the good
+          life）」嘅價值觀，例如較著重個人自主、 主觀幸福感及 therapeutic
+          language，同時避免作出明確嘅神學或形而上立場。
+        </p>
+        <div class="flow">
+          所以我哋需要問嘅唔只係「呢個建議有冇問題？」， 而係：<strong
+            >「呢個答案背後，究竟預設緊一種點樣嘅美好人生？」</strong
+          >
+        </div>
+        <p>
+          一個聽落好有同理心嘅答案，仍然可能遺漏基督教信仰中重要嘅脈絡，例如
+          <strong>教會 → 基督的身體 → 信仰群體 → 門徒訓練 → 復和 → 忍耐 → 彼此守望／問責</strong>；
+          而一個有經驗嘅牧者，可能唔會立即畀答案，反而會先透過關懷式追問，
+          了解對方真正面對緊嘅問題。
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>3. 「Digital Catechesis」：AI 作為私人世界觀對話者</h2>
+        <p>
+          呢點亦連接到論文所講嘅 <strong>「Digital Catechesis（數碼教理／信仰塑造）」</strong>。
+          對於由細已經生活喺互聯網同 AI 環境嘅年輕人，AI 可以成為一個隨時可接觸、私密，
+          而且逐漸被信任嘅 <strong>「私人世界觀對話者（private worldview interlocutor）」</strong>。
+        </p>
+        <p>
+          尤其係信仰懷疑、人際關係、性、苦難、道德抉擇、教會創傷等佢哋未必敢直接問牧者嘅問題， AI
+          好可能成為第一個對話對象。因此，即使每一個答案本身都冇明顯「危險」，
+          長期反覆對話仍然可能逐步塑造一個年輕人嘅價值觀、道德想像同信仰理解。
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>4. 由 FAI-C 發展我哋自己嘅 Pastoral AI Evaluation Framework</h2>
+        <p>
+          因此，FAI-C 可以成為我哋建立自己
+          <strong>Pastoral AI Evaluation Framework（牧養 AI 評估框架）</strong>
+          嘅起點，例如初步包括：
+          <strong
+            >(1) 聖經基礎、(2) 神學一致性、(3) 牧養智慧、(4) 華人文化適切性、 (5) 青少年適切性、(6)
+            心理／安全適切性、(7) 知識及資訊可靠性、 (8) 導向真人／教會群體關係嘅能力。</strong
+          >
+        </p>
+        <p>
+          而且唔應該只做 single-turn「一問一答」測試，而可以進一步發展成
+          <strong>multi-turn evaluation</strong>，將整段對話納入評估，觀察 AI
+          隨住逐步了解一個年輕人真正處境之後， 能否持續保持神學一致性、文化敏感度同合適嘅牧養判斷。
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>5. 挑戰「資料庫夠大就等於 Christian alignment 足夠」</h2>
+        <p>
+          呢個方向亦挑戰咗一個重要假設：
+          <span class="highlight"
+            >「有足夠大、足夠好嘅基督教資料庫，就自然會產生足夠 Christian-aligned 嘅 AI。」</span
+          >
+        </p>
+        <p>
+          即使 RAG 成功搵到正確經文、講道或神學材料，最後由模型整合、理解同回應時，
+          仍然可能加入同原本信仰框架不一致嘅價值假設。
+        </p>
+        <div class="flow">
+          所以評估唔可以只問「AI 有冇搵啱基督教資料？」， 更加要問：<strong
+            >「如果係一個有智慧、有經驗嘅牧者，面對眼前呢一個人、呢一個具體處境，佢真係會咁樣回應嗎？」</strong
+          >
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>6. Epistemic Humility：知道「確定性」去到邊度為止</h2>
+        <p>
+          另一個值得加入嘅重要維度係 <strong>Epistemic Humility（知識／認知上的謙卑）</strong>。
+          Christian alignment 唔應該等於「所有神學問題都畀出最肯定嘅答案」。
+          聖經明確教導、宗派詮釋、牧養判斷，以及人根本無法知道嘅事情，需要被清楚區分。
+        </p>
+        <p>
+          有時一個負責任嘅基督教答案正正係：<strong>「我哋唔知道。」</strong>
+          人能夠理解上帝嘅知識同智慧始終有限，所以 AI 能否知道
+          <strong>「確定性去到邊度為止」</strong>，本身就可以成為一個非常值得研究嘅評估問題。
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>7. 唔需要假裝神學中立</h2>
+        <p>最後，我哋亦唔需要假裝存在完全嘅「神學中立」。相反，研究可以清楚、透明地定義：</p>
+        <div class="questions">
+          <p><strong>我哋所講嘅「Christian」係乜？</strong></p>
+          <p><strong>邊啲教義屬於核心基礎？</strong></p>
+          <p><strong>邊啲議題容許基督徒有合理分歧？</strong></p>
+          <p><strong>乜嘢係聖經本身、乜嘢係神學詮釋、乜嘢只係牧養判斷？</strong></p>
+        </div>
+        <p style="margin-top: 14px">將呢啲界線明確記錄，本身亦可以成為研究方法嘅重要部分。</p>
+      </section>
+
+      <section class="section">
+        <h2>8. 核心研究問題</h2>
+        <div class="footer-note">
+          <p>
+            <strong
+              >一個使用 RAG 嘅 AI 牧人助理，喺面對華語年輕人真實而且 multi-turn 嘅對話時，
+              能否持續提供有聖經基礎、神學一致、文化合適、具牧養智慧，而且最終導向真人及基督教群體關係嘅回應？</strong
+            >
+          </p>
+          <p>
+            <strong
+              >而同一批情境之下，呢個系統同未經特別調整嘅 Frontier Model
+              相比，究竟有幾大分別？</strong
+            >
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>

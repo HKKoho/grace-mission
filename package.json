@@ -11,8 +11,8 @@
   "scripts": {
     "build": "pnpm -r run build",
     "dev": "pnpm -r --parallel run dev",
-    "lint": "eslint . && pnpm run typecheck",
-    "lint:fix": "eslint . --fix",
+    "lint": "pnpm --filter @clawix/shared run build && eslint . && pnpm run typecheck",
+    "lint:fix": "pnpm --filter @clawix/shared run build && eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm --filter @clawix/shared build && pnpm --filter @clawix/api exec prisma generate && pnpm -r run typecheck",
