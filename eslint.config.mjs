@@ -16,6 +16,7 @@ export default tseslint.config(
       '**/prisma/seed.example.ts',
       '**/generated/**',
       'scripts/**',
+      'infra/docker/**',
     ],
   },
   js.configs.recommended,

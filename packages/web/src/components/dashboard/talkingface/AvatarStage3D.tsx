@@ -9,11 +9,25 @@ import type { TalkingHead as TalkingHeadType } from '@met4citizen/talkinghead';
  * properly licensed model (see talkingface/build-plan.md §2) before any
  * commercial use.
  */
-const DEMO_AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
+const DEMO_AVATAR_URL =
+  'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
+
+export interface SpeakParams {
+  readonly audio: AudioBuffer;
+  readonly words: string[];
+  readonly wtimes: number[];
+  readonly wdurations: number[];
+}
 
 export interface AvatarStageHandle {
-  /** Speaks a short line using synthetic viseme timings — no TTS wired up yet (Milestone 4). */
+  /** Speaks a short line using synthetic viseme timings — useful as an offline smoke test. */
   speakTestPhrase: () => void;
+  /**
+   * Speaks real TTS audio. Visemes are deliberately omitted — TalkingHead's
+   * built-in `lipsync-en` module (loaded via `lipsyncModules: ['en']` below)
+   * derives them from `words`/`wtimes`/`wdurations` alone.
+   */
+  speak: (params: SpeakParams) => void;
 }
 
 interface AvatarStage3DProps {
@@ -43,7 +57,7 @@ export const AvatarStage3D = forwardRef<AvatarStageHandle, AvatarStage3DProps>(
           if (disposed || !containerRef.current) return;
 
           const head = new TalkingHead(containerRef.current, {
-            ttsEndpoint: '', // no built-in TTS — audio/visemes are pushed in via speakAudio (Milestone 4)
+            ttsEndpoint: '', // no built-in TTS — audio is generated server-side (Piper) and pushed in via speakAudio()
             lipsyncModules: ['en'],
             cameraView: 'head',
             avatarMood: 'neutral',
@@ -89,6 +103,9 @@ export const AvatarStage3D = forwardRef<AvatarStageHandle, AvatarStage3DProps>(
           vtimes: [0, 50, 200, 380, 420, 550, 650, 900, 1400],
           vdurations: [50, 150, 150, 40, 130, 100, 250, 400, 200],
         });
+      },
+      speak: ({ audio, words, wtimes, wdurations }) => {
+        headRef.current?.speakAudio({ audio, words, wtimes, wdurations });
       },
     }));
 
