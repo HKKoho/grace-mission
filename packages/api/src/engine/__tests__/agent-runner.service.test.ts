@@ -387,7 +387,9 @@ describe('AgentRunnerService', () => {
 
     // Set up mock ReasoningLoop instance
     mockLoopInstance = { run: vi.fn().mockResolvedValue(mockLoopResult) };
-    vi.mocked(ReasoningLoop).mockImplementation(() => mockLoopInstance as unknown as ReasoningLoop);
+    vi.mocked(ReasoningLoop).mockImplementation(function ReasoningLoopMock() {
+      return mockLoopInstance as unknown as ReasoningLoop;
+    });
 
     // Set up mock provider factory
     vi.mocked(createProvider).mockReturnValue(mockProvider);
@@ -1016,7 +1018,9 @@ describe('AgentRunnerService — with messageStore', () => {
     mocks = buildMocks();
 
     mockLoopInstance = { run: vi.fn().mockResolvedValue(mockLoopResult) };
-    vi.mocked(ReasoningLoop).mockImplementation(() => mockLoopInstance as unknown as ReasoningLoop);
+    vi.mocked(ReasoningLoop).mockImplementation(function ReasoningLoopMock() {
+      return mockLoopInstance as unknown as ReasoningLoop;
+    });
     vi.mocked(createProvider).mockReturnValue(mockProvider);
 
     service = new AgentRunnerService(
@@ -1096,7 +1100,9 @@ describe('AgentRunnerService — recovery integration', () => {
     mocks = buildMocks();
 
     mockLoopInstance = { run: vi.fn().mockResolvedValue(mockLoopResult) };
-    vi.mocked(ReasoningLoop).mockImplementation(() => mockLoopInstance as unknown as ReasoningLoop);
+    vi.mocked(ReasoningLoop).mockImplementation(function ReasoningLoopMock() {
+      return mockLoopInstance as unknown as ReasoningLoop;
+    });
     vi.mocked(createProvider).mockReturnValue(mockProvider);
 
     service = new AgentRunnerService(

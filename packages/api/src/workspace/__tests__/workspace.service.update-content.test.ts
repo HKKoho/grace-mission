@@ -43,7 +43,9 @@ describe('WorkspaceService.updateFileContent', () => {
       exists: vi.fn().mockResolvedValue(true),
     };
 
-    MockedScopedFs.mockImplementation(() => mockScopedFs as unknown as ScopedFs);
+    MockedScopedFs.mockImplementation(function ScopedFsMock() {
+      return mockScopedFs as unknown as ScopedFs;
+    });
 
     mockUserAgentRepo = {
       findByUserId: vi.fn().mockResolvedValue({ workspacePath }),
