@@ -170,7 +170,13 @@ const OPERATIONAL = new Set<RoleKey>([
   'volunteer',
 ]);
 const EVERYONE = new Set<RoleKey>(ROLE_ORDER);
-const ELEVATED = new Set<RoleKey>(['super_admin', 'senior_pastor', 'pastor', 'admin_staff', 'ministry_leader']);
+const ELEVATED = new Set<RoleKey>([
+  'super_admin',
+  'senior_pastor',
+  'pastor',
+  'admin_staff',
+  'ministry_leader',
+]);
 
 const permissionMatrix: PermissionGroup[] = [
   {
@@ -297,7 +303,8 @@ const messages = {
         'Build & operate: create agents, write skills, run agents, schedule tasks, monitor usage, manage channels, SDK integration.',
       ministry_leader:
         'Operates within their own department’s workspace folders: creates and runs agents, submits skills, manages that department’s content.',
-      volunteer: 'Runs agents and views content within their own department. Cannot create or edit agents.',
+      volunteer:
+        'Runs agents and views content within their own department. Cannot create or edit agents.',
       guest: 'Read-only: dashboards, audit logs, token reports.',
     },
     departmentLabels: {
@@ -439,11 +446,13 @@ const messages = {
     roleDescriptions: {
       super_admin:
         '完整平台控制權：組織設定、使用者管理、RBAC、代理生命週期、頻道設定、技能審核、供應商、系統健康狀態。',
-      senior_pastor: '可檢視所有事工類別的工作區資料夾，並可核准／刪除代理與技能，但不管理系統設定。',
+      senior_pastor:
+        '可檢視所有事工類別的工作區資料夾，並可核准／刪除代理與技能，但不管理系統設定。',
       pastor: '與主任牧師相同的跨類別檢視權限；著重於事工督導而非平台管理。',
       admin_staff:
         '建置與營運：建立代理、撰寫技能、執行代理、排程任務、監控用量、管理頻道、SDK 整合。',
-      ministry_leader: '僅限於自己負責的事工類別工作區資料夾：建立與執行代理、提交技能、管理該類別內容。',
+      ministry_leader:
+        '僅限於自己負責的事工類別工作區資料夾：建立與執行代理、提交技能、管理該類別內容。',
       volunteer: '可在自己負責的事工類別內執行代理與檢視內容，無法建立或編輯代理。',
       guest: '唯讀：儀表板、稽核日誌、Token 報表。',
     },
@@ -1016,8 +1025,9 @@ export default function UsersPage() {
                           </Badge>
                           {user.department !== 'all' && (
                             <span className="text-xs text-muted-foreground">
-                              {t.departmentLabels[user.department as keyof typeof t.departmentLabels] ??
-                                user.department}
+                              {t.departmentLabels[
+                                user.department as keyof typeof t.departmentLabels
+                              ] ?? user.department}
                             </span>
                           )}
                         </div>
@@ -1116,7 +1126,9 @@ export default function UsersPage() {
                       </TableRow>
                       {group.permissions.map((perm) => (
                         <TableRow key={perm.key}>
-                          <TableCell className="text-sm">{t.permissions[perm.key as keyof typeof t.permissions]}</TableCell>
+                          <TableCell className="text-sm">
+                            {t.permissions[perm.key as keyof typeof t.permissions]}
+                          </TableCell>
                           {ROLE_ORDER.map((role) => (
                             <TableCell key={role} className="text-center">
                               {perm.allowed.has(role) ? (
@@ -1458,7 +1470,9 @@ export default function UsersPage() {
                   ))}
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  {editUserRole === READ_ONLY_ROLE ? t.editDialog.readOnlyHelp : t.editDialog.agentHelp}
+                  {editUserRole === READ_ONLY_ROLE
+                    ? t.editDialog.readOnlyHelp
+                    : t.editDialog.agentHelp}
                 </p>
               </div>
               <DialogFooter>

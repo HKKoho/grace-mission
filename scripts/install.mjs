@@ -534,16 +534,21 @@ async function main() {
           pgReady = true;
           break;
         } catch {
-          await new Promise(r => setTimeout(r, 2000));
+          await new Promise((r) => setTimeout(r, 2000));
         }
       }
       if (pgReady) {
         try {
-          run(`docker exec clawix-postgres psql -U clawix -d clawix -c "ALTER USER clawix WITH PASSWORD '${pgPass}';"`, { stdio: 'ignore' });
+          run(
+            `docker exec clawix-postgres psql -U clawix -d clawix -c "ALTER USER clawix WITH PASSWORD '${pgPass}';"`,
+            { stdio: 'ignore' },
+          );
           run('docker restart clawix-api', { stdio: 'ignore' });
           ok('Postgres credentials synced — API restarted');
         } catch {
-          warn('Could not sync Postgres credentials — if API fails to connect, run:\n  docker exec clawix-postgres psql -U clawix -d clawix -c "ALTER USER clawix WITH PASSWORD \'<your POSTGRES_PASSWORD>\';"');
+          warn(
+            'Could not sync Postgres credentials — if API fails to connect, run:\n  docker exec clawix-postgres psql -U clawix -d clawix -c "ALTER USER clawix WITH PASSWORD \'<your POSTGRES_PASSWORD>\';"',
+          );
         }
       } else {
         warn('Postgres not ready within 30s — skipping credential sync');

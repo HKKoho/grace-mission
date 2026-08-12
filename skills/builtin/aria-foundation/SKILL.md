@@ -15,26 +15,31 @@ Reference this skill when calibrating tone, depth, and ethical framing for any d
 ## Stakeholder Profiles
 
 ### Institutional Supporters & Foundations
+
 **What they need:** Rigorous impact evidence, clear theory of change, fiduciary confidence, transparent variance reporting.
 **Emotional reality:** They carry the weight of choosing well among competing goods. They want to trust the organisation — not be sold to.
 **Engage with:** Governance structures, measurable outcomes, risk frameworks, portfolio alignment, honest acknowledgement of what did not work.
 
 ### Corporate CSR Partners
+
 **What they need:** Brand alignment, employee engagement narratives, compliance-friendly structures, co-branding opportunities.
 **Emotional reality:** They are navigating internal sceptics and want visible, shareable wins they can justify internally.
 **Engage with:** SDG alignment, storytelling assets, stakeholder visibility, concrete beneficiary numbers, reputational risk management.
 
 ### Individual Supporters & Champions
+
 **What they need:** A story they can believe in, proof their contribution matters, a personal connection to human impact.
 **Emotional reality:** They give from hope and care. They fear being manipulated or losing their money to overhead. They want to feel part of something real.
 **Engage with:** Specific lives changed (with consent), community voices in their own words, clear fund-use transparency, the personal role they played.
 
 ### Academic & Research Partners
+
 **What they need:** Methodological rigour, open data access, attribution clarity, peer-validated approaches.
 **Emotional reality:** They are protective of credibility and distrust hype. Overstated claims damage the relationship immediately.
 **Engage with:** Evidence standards, research protocols, publication pathways, dataset governance, honest acknowledgement of limitations and knowledge gaps.
 
 ### Community Beneficiaries & Local Partners
+
 **What they need:** Agency, cultural respect, practical tools that fit their context, local language and literacy levels.
 **Emotional reality:** They have heard many promises. What they need is genuine presence and follow-through, not pity.
 **Engage with:** Community ownership and self-determination, two-way learning (not one-way transfer), sustainability of impact after the project ends.
@@ -44,17 +49,19 @@ Reference this skill when calibrating tone, depth, and ethical framing for any d
 ## Impact Framing
 
 Always distinguish clearly between:
+
 - **Output** — what the programme delivers directly (training sessions run, kits distributed, staff trained)
 - **Outcome** — what changes as a result for participants (skills applied, behaviour shifted, income increased)
 - **Impact** — the longer-term change in people's lives that can be attributed to those outcomes
 
-When presenting data: *"What does this mean for a real person in a real place?"* Translate aggregates into human-scale meaning before presenting them to non-specialist audiences.
+When presenting data: _"What does this mean for a real person in a real place?"_ Translate aggregates into human-scale meaning before presenting them to non-specialist audiences.
 
 ---
 
 ## Communication Principles
 
 ### Language rules
+
 - Plain language first; technical depth only when explicitly requested or when the audience profile calls for it.
 - Translate impact into specific, human-scale stories — not just percentages.
 - Avoid: "leverage", "synergy", "unlock potential", "game-changer", "impactful", "transformative". Choose concrete words that describe what actually happened.
@@ -62,6 +69,7 @@ When presenting data: *"What does this mean for a real person in a real place?"*
 - Use **we** when speaking as the organisation — the work is collective, not branded.
 
 ### Tone by audience
+
 - **Institutional supporters:** Warm, honest, evidence-grounded. Never salesy. Share the complexity alongside the hope. Acknowledge what did not go as planned.
 - **CSR partners:** Strategic and concrete. Surface what is measurable and attributable. Avoid mission-speak that does not connect to business value.
 - **Individual supporters:** Specific and human. Lead with a story. Numbers support the story; they do not replace it.
@@ -69,6 +77,7 @@ When presenting data: *"What does this mean for a real person in a real place?"*
 - **Community members and local partners:** Patient and culturally attentive. Ask before assuming. Listen more than explaining.
 
 ### Dignity in storytelling
+
 - Beneficiaries are the protagonists of their own stories, not objects of intervention.
 - No rescuer framing. No anonymous-suffering imagery. No poverty-porn.
 - Communities are agents of change, not passive recipients of the NGO's work.

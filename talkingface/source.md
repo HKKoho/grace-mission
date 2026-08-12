@@ -44,14 +44,14 @@ you sub-2s time-to-first-video-frame.
 
 ## 2. Component responsibilities
 
-| Layer | Responsibility | Candidate OSS |
-|---|---|---|
-| Agent Orchestrator | LLM calls, tool use, memory/RAG, decides *what* to say | your existing orchestrator |
-| STT (optional, if voice input) | mic audio → text | Whisper |
-| TTS | text chunk → audio + timing data (visemes/phonemes) | Chatterbox, HeadTTS, Piper, ElevenLabs |
-| Lip-sync engine | audio/visemes → face animation | MuseTalk (photoreal video), TalkingHead.js + HeadAudio (3D, browser-side) |
-| Realtime transport | push audio/viseme chunks to client | WebSocket (or WebRTC for full-duplex) |
-| Renderer | draw the face in sync with audio | `<video>` tag (MuseTalk) or ThreeJS canvas (TalkingHead 3D) |
+| Layer                          | Responsibility                                         | Candidate OSS                                                             |
+| ------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Agent Orchestrator             | LLM calls, tool use, memory/RAG, decides _what_ to say | your existing orchestrator                                                |
+| STT (optional, if voice input) | mic audio → text                                       | Whisper                                                                   |
+| TTS                            | text chunk → audio + timing data (visemes/phonemes)    | Chatterbox, HeadTTS, Piper, ElevenLabs                                    |
+| Lip-sync engine                | audio/visemes → face animation                         | MuseTalk (photoreal video), TalkingHead.js + HeadAudio (3D, browser-side) |
+| Realtime transport             | push audio/viseme chunks to client                     | WebSocket (or WebRTC for full-duplex)                                     |
+| Renderer                       | draw the face in sync with audio                       | `<video>` tag (MuseTalk) or ThreeJS canvas (TalkingHead 3D)               |
 
 ---
 
@@ -119,13 +119,15 @@ project-root/
 ## 4. What goes in the database vs. frontend assets vs. object storage
 
 **Database (Postgres/etc.) — metadata and small structured data only**
-- `AvatarConfig`: avatar id, display name, which 3D model/video-source it maps to (a *reference*, not the file), voice_profile_id, default LLM/system-prompt config
+
+- `AvatarConfig`: avatar id, display name, which 3D model/video-source it maps to (a _reference_, not the file), voice_profile_id, default LLM/system-prompt config
 - `VoiceProfile`: TTS provider, voice id, language, reference to a voice-clone sample in object storage (not the audio itself)
 - `Session` / `ConversationTurn`: chat history, timestamps, which avatar/voice was used, token usage — text only
 - User preferences, feature flags, org/tenant config
 - Rule of thumb: if it's under a few KB and queried/filtered often, it's DB. If it's a binary blob, it's not.
 
 **Object storage (S3/GCS/R2) — generated or user-uploaded binaries**
+
 - Generated TTS audio clips (if you cache/replay them)
 - Generated lip-sync video segments (if using server-side MuseTalk/SadTalker rendering)
 - User-uploaded photos for photoreal avatar creation
@@ -133,6 +135,7 @@ project-root/
 - Store the URL/key in the DB row that references it (e.g. `VoiceProfile.sample_url`)
 
 **Frontend static assets (`/public/assets` or CDN) — things shipped with the app, not user/session-specific**
+
 - 3D avatar `.glb`/`.fbx` models and rig data for TalkingHead.js
 - Base textures, idle animations, default poses
 - Viseme-to-blendshape mapping tables (static JSON, rarely changes)
@@ -141,6 +144,7 @@ project-root/
 - Rule of thumb: if every user gets the same file and it changes only on deploy, it's a frontend/CDN asset — don't round-trip it through the DB or your API.
 
 **Do NOT put in the database**
+
 - Audio/video binaries (even small ones bloat row size and backups fast)
 - 3D model files or textures
 - Full LLM conversation embeddings if you're doing RAG — those belong in a vector store, referenced by id from `ConversationTurn`
@@ -149,20 +153,20 @@ project-root/
 
 ## 5. Where to get each component
 
-| Component | Repo / package | Notes |
-|---|---|---|
-| Reference full-stack platform | [github.com/PunithVT/ai-avatar-system](https://github.com/PunithVT/ai-avatar-system) | Whisper → LLM → Chatterbox → MuseTalk, read as reference, not a dependency |
-| Lip-sync (photoreal) | [github.com/TMElyralab/MuseTalk](https://github.com/TMElyralab/MuseTalk) | pip-installable, needs GPU for real-time |
-| Lip-sync (lightweight fallback) | [github.com/Rudrabha/Wav2Lip](https://github.com/Rudrabha/Wav2Lip) | Older, lower GPU requirement |
-| Talking-head video generation | [github.com/OpenTalker/SadTalker](https://github.com/OpenTalker/SadTalker) | Single portrait + audio → video |
-| Expression/motion transfer | [github.com/KwaiVGI/LivePortrait](https://github.com/KwaiVGI/LivePortrait) | Often paired with MuseTalk |
-| 3D avatar renderer (browser) | [github.com/met4citizen/TalkingHead](https://github.com/met4citizen/TalkingHead) | JS class, ThreeJS/WebGL, npm-installable |
-| Browser-side viseme detection | [github.com/met4citizen/HeadAudio](https://github.com/met4citizen/HeadAudio) | Audio worklet, no LLM/text needed |
-| In-browser TTS w/ visemes | [github.com/met4citizen/HeadTTS](https://github.com/met4citizen/HeadTTS) | WebGPU, phoneme-timestamped output |
-| TTS (self-hosted) | [github.com/resemble-ai/chatterbox](https://github.com/resemble-ai/chatterbox) | Voice cloning, multilingual |
-| TTS (lightweight/local) | [github.com/rhasspy/piper](https://github.com/rhasspy/piper) | CPU-friendly, good for edge/local |
-| STT | [github.com/openai/whisper](https://github.com/openai/whisper) | Also available via `openai-whisper` on PyPI |
-| LLM-driven VTuber framework | [github.com/Open-LLM-VTuber/Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber) | Reference for agent-to-avatar plumbing |
+| Component                       | Repo / package                                                                                   | Notes                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Reference full-stack platform   | [github.com/PunithVT/ai-avatar-system](https://github.com/PunithVT/ai-avatar-system)             | Whisper → LLM → Chatterbox → MuseTalk, read as reference, not a dependency |
+| Lip-sync (photoreal)            | [github.com/TMElyralab/MuseTalk](https://github.com/TMElyralab/MuseTalk)                         | pip-installable, needs GPU for real-time                                   |
+| Lip-sync (lightweight fallback) | [github.com/Rudrabha/Wav2Lip](https://github.com/Rudrabha/Wav2Lip)                               | Older, lower GPU requirement                                               |
+| Talking-head video generation   | [github.com/OpenTalker/SadTalker](https://github.com/OpenTalker/SadTalker)                       | Single portrait + audio → video                                            |
+| Expression/motion transfer      | [github.com/KwaiVGI/LivePortrait](https://github.com/KwaiVGI/LivePortrait)                       | Often paired with MuseTalk                                                 |
+| 3D avatar renderer (browser)    | [github.com/met4citizen/TalkingHead](https://github.com/met4citizen/TalkingHead)                 | JS class, ThreeJS/WebGL, npm-installable                                   |
+| Browser-side viseme detection   | [github.com/met4citizen/HeadAudio](https://github.com/met4citizen/HeadAudio)                     | Audio worklet, no LLM/text needed                                          |
+| In-browser TTS w/ visemes       | [github.com/met4citizen/HeadTTS](https://github.com/met4citizen/HeadTTS)                         | WebGPU, phoneme-timestamped output                                         |
+| TTS (self-hosted)               | [github.com/resemble-ai/chatterbox](https://github.com/resemble-ai/chatterbox)                   | Voice cloning, multilingual                                                |
+| TTS (lightweight/local)         | [github.com/rhasspy/piper](https://github.com/rhasspy/piper)                                     | CPU-friendly, good for edge/local                                          |
+| STT                             | [github.com/openai/whisper](https://github.com/openai/whisper)                                   | Also available via `openai-whisper` on PyPI                                |
+| LLM-driven VTuber framework     | [github.com/Open-LLM-VTuber/Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber) | Reference for agent-to-avatar plumbing                                     |
 
 Most of the Python-side pieces (MuseTalk, Wav2Lip, SadTalker, LivePortrait, Whisper, Chatterbox) also have model weights hosted on **Hugging Face** — check each repo's README for the exact HF model id, since weights are usually pulled separately from the code via `huggingface_hub` or `git lfs`.
 
