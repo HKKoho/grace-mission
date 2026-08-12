@@ -7,31 +7,13 @@ interface RoadmapItem {
   readonly eta?: string;
 }
 
-// Phase 2A (the original gospel-mission 8-key-areas backlog) shipped in full —
-// folded in here rather than kept as its own now-empty section.
-const SHIPPED: readonly RoadmapItem[] = [
-  { title: 'Pastoral-care agent' },
-  { title: 'Speech input & read-aloud' },
-  { title: 'Partners Directory' },
-  { title: 'Mission Trip Fields' },
-  { title: 'Kingdom Impact Indicators' },
-  { title: 'Financial Stewardship & Ledger Export' },
-  { title: 'Evangelism & Outreach Agent' },
-  { title: 'Scripture & Literacy Tracker' },
-  { title: 'Consent & Story Permissions Tracker' },
-  { title: 'Game Studio live wiring' },
-  { title: 'Granular RBAC role taxonomy' },
-  { title: 'Categorized ministries top-bar nav' },
-  { title: 'Richer pastoral-care content' },
-];
-
 // Phase 2B — ChurchAIAssistant + ChurchAIAdmin pack integration, build half.
 // Widened after a full feature audit of both source repos found no filler
 // content — every church-* skill carries real, portable material. Also picks
 // up one thing the audit surfaced that isn't "church content" per se: the
 // browser-automation tool suite ChurchAIAssistant has and this repo doesn't.
-// (The other non-content pickup, ChurchAIAdmin's RBAC role taxonomy, shipped
-// as the department-scoped 7-role model — see Shipped above.)
+// (The other non-content pickup, ChurchAIAdmin's RBAC role taxonomy, already
+// shipped as the department-scoped 7-role model.)
 const PHASE_2B: readonly RoadmapItem[] = [
   { title: 'Port all ~20 church-* skills' },
   { title: 'Seed the corresponding agents' },
@@ -91,7 +73,6 @@ export function Phase2RoadmapCard() {
         <CardDescription className="text-[11px]">Planning estimates, not commitments.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 text-xs">
-        <RoadmapSection label="Shipped" items={SHIPPED} />
         <RoadmapSection label="Phase 2B" items={PHASE_2B} />
         <RoadmapSection label="Phase 2C" items={PHASE_2C} />
         <RoadmapSection label="Phase 2D" items={PHASE_2D} />

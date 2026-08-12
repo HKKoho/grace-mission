@@ -87,7 +87,7 @@ export function MinistriesNav({ className }: { className?: string }) {
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
-    <nav className={cn('flex items-center gap-1', className)}>
+    <nav className={cn('flex flex-nowrap items-center gap-1', className)}>
       {categories.map((category) => {
         const items = category.itemKeys
           .map((key) => itemsByKey.get(key))
@@ -101,7 +101,7 @@ export function MinistriesNav({ className }: { className?: string }) {
                 variant="ghost"
                 size="sm"
                 data-active={categoryActive}
-                className="data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+                className="shrink-0 data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
               >
                 {t.category[category.key as keyof typeof t.category]}
                 <ChevronDown className="size-3.5 text-muted-foreground" />

@@ -11,7 +11,12 @@ export const MAX_DELAY_SECONDS = 30;
 
 // Refresh token cookie
 export const REFRESH_COOKIE_NAME = 'clawix_refresh';
-// AuthController is mounted at `/auth` (no /api/v1 prefix); cookie path must
-// match so the browser sends it on /auth/refresh and /auth/logout.
-export const REFRESH_COOKIE_PATH = '/auth';
+// Cookie Path is matched against the URL the *browser* requests, not the
+// path AuthController sees server-side. Behind a reverse proxy that rewrites
+// paths (e.g. Caddy `handle_path /api/*` stripping the prefix before
+// forwarding to `/auth/...`), the browser only ever calls `/api/auth/...` —
+// a cookie scoped to `/auth` never matches that and is silently dropped,
+// breaking every refresh. Scope to the whole origin so it survives any
+// proxy path-prefixing scheme.
+export const REFRESH_COOKIE_PATH = '/';
 export const REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds

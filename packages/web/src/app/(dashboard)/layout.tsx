@@ -39,8 +39,10 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-2 border-b bg-background px-4">
-        <SidebarTrigger className="-ml-1" />
-        <MinistriesNav className="ml-auto" />
+        <SidebarTrigger className="-ml-1 shrink-0" />
+        <div className="ml-auto min-w-0 overflow-x-auto">
+          <MinistriesNav />
+        </div>
       </header>
       <AppSidebar />
       <SidebarInset>
