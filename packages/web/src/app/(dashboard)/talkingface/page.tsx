@@ -10,6 +10,10 @@ import {
   AvatarStage3D,
   type AvatarStageHandle,
 } from '@/components/dashboard/talkingface/AvatarStage3D';
+import {
+  useTalkingFaceSocket,
+  type SpeakChunk,
+} from '@/components/dashboard/talkingface/useTalkingFaceSocket';
 
 interface ApiAgent {
   id: string;
@@ -19,15 +23,6 @@ interface ApiAgent {
 
 interface PaginatedAgents {
   data: ApiAgent[];
-}
-
-interface TalkingFaceSpeakResponse {
-  text: string;
-  sessionId: string | null;
-  audio: string;
-  words: string[];
-  wtimes: number[];
-  wdurations: number[];
 }
 
 const messages = {
@@ -102,32 +97,49 @@ export default function TalkingFacePage() {
     stageRef.current?.speakTestPhrase();
   }, []);
 
+  const handleChunk = useCallback(async (chunk: SpeakChunk) => {
+    const audio = await decodeBase64Audio(chunk.audio);
+    stageRef.current?.speak({
+      audio,
+      words: chunk.words,
+      wtimes: chunk.wtimes,
+      wdurations: chunk.wdurations,
+    });
+  }, []);
+
+  const handleDone = useCallback((newSessionId: string | null) => {
+    setSessionId(newSessionId ?? undefined);
+    setSpeaking(false);
+  }, []);
+
+  const handleError = useCallback(
+    (message: string) => {
+      setError(t.speakError(message));
+      setSpeaking(false);
+    },
+    [t],
+  );
+
+  const { sendSpeak } = useTalkingFaceSocket({
+    onChunk: handleChunk,
+    onDone: handleDone,
+    onError: handleError,
+  });
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || !agentId || speaking) return;
 
     setSpeaking(true);
     setError('');
+    setInput('');
     try {
-      const result = await authFetch<TalkingFaceSpeakResponse>('/api/v1/talkingface/speak', {
-        method: 'POST',
-        body: JSON.stringify({ agentDefinitionId: agentId, input: text, sessionId }),
-      });
-      setSessionId(result.sessionId ?? undefined);
-      setInput('');
-      const audio = await decodeBase64Audio(result.audio);
-      stageRef.current?.speak({
-        audio,
-        words: result.words,
-        wtimes: result.wtimes,
-        wdurations: result.wdurations,
-      });
+      await sendSpeak(agentId, text, sessionId);
     } catch (err) {
       setError(t.speakError(err instanceof Error ? err.message : 'Unknown error'));
-    } finally {
       setSpeaking(false);
     }
-  }, [input, agentId, sessionId, speaking, t]);
+  }, [input, agentId, sessionId, speaking, sendSpeak, t]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4 p-6">
