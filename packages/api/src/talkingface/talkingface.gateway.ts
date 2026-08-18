@@ -2,7 +2,8 @@ import { Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/com
 import { HttpAdapterHost } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import type { IncomingMessage } from 'node:http';
+import type { IncomingMessage, Server } from 'node:http';
+import type { Duplex } from 'node:stream';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { createLogger } from '@clawix/shared';
 
@@ -35,6 +36,14 @@ interface JwtPayload {
 @Injectable()
 export class TalkingFaceGateway implements OnModuleInit, OnModuleDestroy {
   private wss: WebSocketServer | null = null;
+  private server: Server | null = null;
+  private readonly upgradeListener = (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+    const { pathname } = new URL(req.url ?? '', 'http://localhost');
+    if (pathname !== '/ws/talkingface' || !this.wss) return;
+    this.wss.handleUpgrade(req, socket, head, (ws) => {
+      this.wss?.emit('connection', ws, req);
+    });
+  };
 
   constructor(
     private readonly jwtService: JwtService,
@@ -46,8 +55,13 @@ export class TalkingFaceGateway implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
+    // noServer + a path-filtered 'upgrade' listener — see web.gateway.ts for
+    // why { server, path } is unsafe when more than one WS gateway shares
+    // the same underlying HTTP server.
     const server = this.httpAdapterHost.httpAdapter.getHttpServer();
-    this.wss = new WebSocketServer({ server, path: '/ws/talkingface' });
+    this.server = server;
+    this.wss = new WebSocketServer({ noServer: true });
+    server.on('upgrade', this.upgradeListener);
 
     this.wss.on('connection', (socket: WebSocket, req: IncomingMessage) => {
       this.handleConnection(socket, req);
@@ -57,6 +71,10 @@ export class TalkingFaceGateway implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
+    if (this.server) {
+      this.server.removeListener('upgrade', this.upgradeListener);
+      this.server = null;
+    }
     if (this.wss) {
       this.wss.close();
       this.wss = null;

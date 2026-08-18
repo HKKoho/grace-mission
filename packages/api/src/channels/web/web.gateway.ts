@@ -2,7 +2,8 @@ import { Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/com
 import { HttpAdapterHost } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import type { IncomingMessage } from 'node:http';
+import type { IncomingMessage, Server } from 'node:http';
+import type { Duplex } from 'node:stream';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { createLogger } from '@clawix/shared';
 
@@ -33,6 +34,14 @@ interface JwtPayload {
 export class WebChatGateway implements OnModuleInit, OnModuleDestroy {
   private adapter: WebAdapterExtended | null = null;
   private wss: WebSocketServer | null = null;
+  private server: Server | null = null;
+  private readonly upgradeListener = (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+    const { pathname } = new URL(req.url ?? '', 'http://localhost');
+    if (pathname !== '/ws/chat' || !this.wss) return;
+    this.wss.handleUpgrade(req, socket, head, (ws) => {
+      this.wss?.emit('connection', ws, req);
+    });
+  };
 
   constructor(
     private readonly jwtService: JwtService,
@@ -41,8 +50,15 @@ export class WebChatGateway implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
+    // noServer + a path-filtered 'upgrade' listener, NOT { server, path }: the
+    // latter aborts (400) any request whose path doesn't match *this* gateway,
+    // which stomps on other WS gateways (e.g. talkingface.gateway.ts) sharing
+    // the same underlying HTTP server — corrupting their already-upgraded
+    // sockets. See https://github.com/websockets/ws#multiple-servers-sharing-a-single-https-server.
     const server = this.httpAdapterHost.httpAdapter.getHttpServer();
-    this.wss = new WebSocketServer({ server, path: '/ws/chat' });
+    this.server = server;
+    this.wss = new WebSocketServer({ noServer: true });
+    server.on('upgrade', this.upgradeListener);
 
     this.wss.on('connection', (socket: WebSocket, req: IncomingMessage) => {
       this.handleConnection(socket, req);
@@ -52,6 +68,10 @@ export class WebChatGateway implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
+    if (this.server) {
+      this.server.removeListener('upgrade', this.upgradeListener);
+      this.server = null;
+    }
     if (this.wss) {
       this.wss.close();
       this.wss = null;

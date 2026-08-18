@@ -53,7 +53,10 @@ export function VantaBackground({ effect, children, className }: VantaBackground
             showDots: true,
           });
         } else {
-          // Topology uses p5.js, not THREE
+          // Topology uses p5.js, but vanta's shared base class still probes
+          // window.THREE and logs a warning if it's absent — set it too.
+          const THREE = await import('three');
+          (window as unknown as Record<string, unknown>)['THREE'] = THREE;
           const p5Module = await import('p5');
           const p5 = p5Module.default;
           (window as unknown as Record<string, unknown>)['p5'] = p5;
