@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, Send, Volume2 } from 'lucide-react';
+import { Loader2, Mic, MicOff, Send, Volume2 } from 'lucide-react';
 import { useT, type Messages } from '@/lib/i18n';
 import { authFetch } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useSpeechInput } from '@/hooks/use-speech-input';
 import {
   AvatarStage3D,
   type AvatarStageHandle,
@@ -33,6 +34,7 @@ const messages = {
       'Type a line and the active agent replies out loud through a self-hosted Piper voice.',
     speak: 'Test speak',
     placeholder: 'Say something…',
+    listening: 'Listening…',
     send: 'Send',
     noAgent: 'No active agent found — create one in Agents before using this page.',
     loadError: (m: string) => `Failed to load avatar: ${m}`,
@@ -44,6 +46,7 @@ const messages = {
     description: '輸入一句話，啟用中的代理會透過自架的 Piper 語音朗讀回覆。',
     speak: '測試發聲',
     placeholder: '輸入訊息…',
+    listening: '聆聽中…',
     send: '傳送',
     noAgent: '找不到啟用中的代理——請先在「代理」頁面建立一個。',
     loadError: (m: string) => `虛擬形象載入失敗：${m}`,
@@ -55,6 +58,7 @@ const messages = {
   description: string;
   speak: string;
   placeholder: string;
+  listening: string;
   send: string;
   noAgent: string;
   loadError: (m: string) => string;
@@ -126,20 +130,39 @@ export default function TalkingFacePage() {
     onError: handleError,
   });
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim();
-    if (!text || !agentId || speaking) return;
+  const sendText = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || !agentId || speaking) return;
 
-    setSpeaking(true);
-    setError('');
-    setInput('');
-    try {
-      await sendSpeak(agentId, text, sessionId);
-    } catch (err) {
-      setError(t.speakError(err instanceof Error ? err.message : 'Unknown error'));
-      setSpeaking(false);
-    }
-  }, [input, agentId, sessionId, speaking, sendSpeak, t]);
+      setSpeaking(true);
+      setError('');
+      setInput('');
+      try {
+        await sendSpeak(agentId, trimmed, sessionId);
+      } catch (err) {
+        setError(t.speakError(err instanceof Error ? err.message : 'Unknown error'));
+        setSpeaking(false);
+      }
+    },
+    [agentId, sessionId, speaking, sendSpeak, t],
+  );
+
+  const handleSend = useCallback(() => {
+    void sendText(input);
+  }, [input, sendText]);
+
+  // Mic click is a full trigger, not just dictation: the final transcript is
+  // sent straight to the agent, same as pressing Send — no extra tap needed.
+  const handleSpeechResult = useCallback(
+    (text: string, isFinal: boolean) => {
+      setInput(text);
+      if (isFinal) void sendText(text);
+    },
+    [sendText],
+  );
+
+  const speechInput = useSpeechInput(handleSpeechResult);
 
   return (
     <div className="flex min-w-0 flex-col gap-4 p-6">
@@ -173,9 +196,31 @@ export default function TalkingFacePage() {
               void handleSend();
             }
           }}
-          placeholder={t.placeholder}
+          placeholder={speechInput.listening ? t.listening : t.placeholder}
           disabled={!ready || !agentId || speaking}
         />
+        {speechInput.supported && (
+          <Button
+            type="button"
+            variant={speechInput.listening ? 'default' : 'secondary'}
+            size="icon"
+            className="size-9 shrink-0 rounded-full"
+            disabled={!ready || !agentId || speaking}
+            onClick={() => {
+              if (speechInput.listening) {
+                speechInput.stop();
+              } else {
+                speechInput.start();
+              }
+            }}
+          >
+            {speechInput.listening ? (
+              <MicOff className="size-4 animate-pulse" />
+            ) : (
+              <Mic className="size-4" />
+            )}
+          </Button>
+        )}
         <Button onClick={() => void handleSend()} disabled={!ready || !agentId || speaking}>
           {speaking ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
           {t.send}

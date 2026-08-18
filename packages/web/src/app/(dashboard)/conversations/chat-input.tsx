@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { authFetch } from '@/lib/auth';
 import { useT, type Messages } from '@/lib/i18n';
-import { useSpeechInput } from './use-speech-input';
+import { useSpeechInput } from '@/hooks/use-speech-input';
 
 /* ------------------------------------------------------------------ */
 /*  Slash commands & skills                                            */
