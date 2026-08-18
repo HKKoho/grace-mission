@@ -112,6 +112,8 @@ export {
   type UpdateCongregationProfileInput,
 } from './congregation-profile.schema.js';
 
+export { talkingFaceSpeakSchema, type TalkingFaceSpeakInput } from './talkingface.schema.js';
+
 export {
   skillNameSchema,
   skillDescriptionSchema,

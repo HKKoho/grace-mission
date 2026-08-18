@@ -39,6 +39,25 @@ services:
       timeout: 5s
       retries: 5
 
+  tts-piper:
+    build:
+      context: .
+      dockerfile: infra/docker/tts/Dockerfile
+    image: clawix-tts:latest
+    container_name: clawix-tts
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:5001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -56,6 +75,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-clawix}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-clawix}?schema=public
       REDIS_URL: redis://redis:6379
+      TTS_PIPER_URL: http://tts-piper:5001
       PORT: '3003'
       HOST: '0.0.0.0'
       LOG_LEVEL: info
@@ -90,6 +110,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      tts-piper:
         condition: service_healthy
 
   web:
