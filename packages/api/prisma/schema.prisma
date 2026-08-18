@@ -83,6 +83,10 @@ model User {
   updatedAt    DateTime @updatedAt
   telegramId   String?  @unique
   whatsappJid  String?  @unique
+  // Links this user to a peer instance for MQTT federation. Admin-only
+  // (unlike telegramId/whatsappJid, which users self-link) because it grants
+  // a whole remote instance the ability to drive this user's agent.
+  mqttPeerInstanceId String? @unique
 
   policy                  Policy            @relation(fields: [policyId], references: [id])
   sessions                Session[]
@@ -220,6 +224,7 @@ enum ChannelType {
   slack
   web
   telegram
+  mqtt
 }
 
 model Channel {

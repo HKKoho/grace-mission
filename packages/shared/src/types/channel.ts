@@ -1,4 +1,4 @@
-export type ChannelType = 'whatsapp' | 'slack' | 'web' | 'telegram';
+export type ChannelType = 'whatsapp' | 'slack' | 'web' | 'telegram' | 'mqtt';
 
 export interface Channel {
   readonly id: string;

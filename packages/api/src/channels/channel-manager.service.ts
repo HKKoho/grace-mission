@@ -9,6 +9,7 @@ import { MessageRouterService } from './message-router.service.js';
 import { RedisPubSubService } from '../cache/redis-pubsub.service.js';
 import { SessionRepository } from '../db/session.repository.js';
 import { UserRepository } from '../db/user.repository.js';
+import { MqttClientService } from '../mqtt/mqtt-client.service.js';
 import { PUBSUB_CHANNELS } from '../cache/cache.constants.js';
 
 const logger = createLogger('channels:manager');
@@ -50,6 +51,7 @@ export class ChannelManagerService implements OnModuleInit, OnModuleDestroy {
     private readonly pubsub: RedisPubSubService,
     private readonly sessionRepo: SessionRepository,
     private readonly userRepo: UserRepository,
+    private readonly mqttClient: MqttClientService,
   ) {}
 
   // ---------------------------------------------------------------- //
@@ -72,6 +74,7 @@ export class ChannelManagerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     await this.ensureWebChannelExists();
+    await this.ensureMqttChannelExists();
     await this.startAll();
     await this.subscribeToResponseDelivery();
     await this.subscribeToCronResults();
@@ -315,9 +318,36 @@ export class ChannelManagerService implements OnModuleInit, OnModuleDestroy {
     logger.info('Auto-seeded web channel');
   }
 
+  /**
+   * MQTT is one shared broker connection per instance (MqttClientService),
+   * not one bot connection per row like Telegram — so at most one 'mqtt'
+   * Channel row should ever exist, and only once MQTT is actually
+   * configured (mqttClient.instanceId is set synchronously in
+   * onModuleInit() before this runs, since MqttModule is a dependency of
+   * ChannelsModule).
+   */
+  private async ensureMqttChannelExists(): Promise<void> {
+    if (!this.mqttClient.instanceId) return;
+
+    const existing = await this.channelRepo.findByType('mqtt');
+    if (existing.length > 0) return;
+
+    await this.channelRepo.create({
+      type: 'mqtt',
+      name: 'MQTT Federation',
+      config: {},
+    });
+    logger.info('Auto-seeded mqtt channel');
+  }
+
   private resolveRecipientId(
     channelType: string,
-    user: { id: string; telegramId?: string | null; whatsappJid?: string | null },
+    user: {
+      id: string;
+      telegramId?: string | null;
+      whatsappJid?: string | null;
+      mqttPeerInstanceId?: string | null;
+    },
   ): string | null {
     switch (channelType) {
       case 'web':
@@ -326,6 +356,8 @@ export class ChannelManagerService implements OnModuleInit, OnModuleDestroy {
         return user.telegramId ?? null;
       case 'whatsapp':
         return user.whatsappJid ?? null;
+      case 'mqtt':
+        return user.mqttPeerInstanceId ?? null;
       default:
         logger.warn({ channelType }, 'No recipient resolver for channel type');
         return null;

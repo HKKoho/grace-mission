@@ -4,6 +4,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { DbModule } from '../db/db.module.js';
 import { EngineModule } from '../engine/engine.module.js';
 import { CommandModule } from '../commands/command.module.js';
+import { MqttModule } from '../mqtt/mqtt.module.js';
+import { MqttClientService } from '../mqtt/mqtt-client.service.js';
 import { ChannelRegistry } from './channel.registry.js';
 import { MessageRouterService } from './message-router.service.js';
 import { ChannelManagerService } from './channel-manager.service.js';
@@ -15,10 +17,11 @@ import { ChannelsController } from './channels.controller.js';
 import { createTelegramAdapter } from './telegram/telegram.adapter.js';
 import { createWhatsAppAdapter } from './whatsapp/whatsapp.adapter.js';
 import { createWebAdapter } from './web/web.adapter.js';
+import { createMqttAdapter } from '../mqtt/mqtt.adapter.js';
 import { WebChatGateway } from './web/web.gateway.js';
 
 @Module({
-  imports: [DbModule, EngineModule, JwtModule.register({}), CommandModule],
+  imports: [DbModule, EngineModule, JwtModule.register({}), CommandModule, MqttModule],
   controllers: [ChannelsController],
   providers: [
     ChannelRegistry,
@@ -34,6 +37,7 @@ import { WebChatGateway } from './web/web.gateway.js';
         sessionRepo: SessionRepository,
         userRepo: UserRepository,
         gateway: WebChatGateway,
+        mqttClient: MqttClientService,
       ) => {
         // Register channel adapter factories
         registry.register('telegram', (config) => createTelegramAdapter(config));
@@ -43,6 +47,7 @@ import { WebChatGateway } from './web/web.gateway.js';
           gateway.setAdapter(adapter);
           return adapter;
         });
+        registry.register('mqtt', (config) => createMqttAdapter(config, mqttClient));
 
         return new ChannelManagerService(
           channelRepo,
@@ -51,6 +56,7 @@ import { WebChatGateway } from './web/web.gateway.js';
           pubsub,
           sessionRepo,
           userRepo,
+          mqttClient,
         );
       },
       inject: [
@@ -61,6 +67,7 @@ import { WebChatGateway } from './web/web.gateway.js';
         SessionRepository,
         UserRepository,
         WebChatGateway,
+        MqttClientService,
       ],
     },
   ],

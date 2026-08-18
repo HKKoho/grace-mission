@@ -64,10 +64,18 @@ export class MessageRouterService {
 
     if (!user?.isActive) {
       logger.warn({ senderId, senderName }, 'Unauthorized channel message');
-      await channel.sendMessage({
-        recipientId: senderId,
-        text: 'You are not authorized to use this bot. Contact your administrator.',
-      });
+      // MQTT is peer-to-peer federation, not a chat client: an "unauthorized"
+      // reply sent back over MQTT is itself a new inbound message to the
+      // sending peer, which would run this same check and reply again —
+      // an infinite loop between any two unlinked instances. Drop silently
+      // instead of replying. Other channels reply to a real end-user chat,
+      // where no such loop can occur.
+      if (message.channelType !== 'mqtt') {
+        await channel.sendMessage({
+          recipientId: senderId,
+          text: 'You are not authorized to use this bot. Contact your administrator.',
+        });
+      }
       return;
     }
 
@@ -76,10 +84,14 @@ export class MessageRouterService {
 
     if (!userAgent) {
       logger.warn({ userId: user.id }, 'No agent configured for user');
-      await channel.sendMessage({
-        recipientId: senderId,
-        text: 'No agent has been configured for your account. Contact your administrator.',
-      });
+      // Same loop hazard as the unauthorized case above: an unconditional
+      // reply to an MQTT peer is a new inbound message on their side.
+      if (message.channelType !== 'mqtt') {
+        await channel.sendMessage({
+          recipientId: senderId,
+          text: 'No agent has been configured for your account. Contact your administrator.',
+        });
+      }
       return;
     }
 
@@ -248,6 +260,8 @@ export class MessageRouterService {
         return this.userRepo.findByTelegramId(senderId);
       case 'whatsapp':
         return this.userRepo.findByWhatsappJid(senderId);
+      case 'mqtt':
+        return this.userRepo.findByMqttPeerInstanceId(senderId);
       default:
         logger.warn({ channelType }, 'No user lookup for channel type');
         return null;

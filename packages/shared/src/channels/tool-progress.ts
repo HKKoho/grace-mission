@@ -23,6 +23,7 @@ const PLATFORM_DEFAULTS: Record<ChannelType, ToolProgressMode> = {
   whatsapp: 'new',
   slack: 'off',
   web: 'all',
+  mqtt: 'off',
 };
 
 /**

@@ -36,6 +36,7 @@ interface UpdateUserInput {
   readonly department?: Department;
   readonly isActive?: boolean;
   readonly policyId?: string;
+  readonly mqttPeerInstanceId?: string | null;
 }
 
 @Injectable()

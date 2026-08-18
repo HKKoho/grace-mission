@@ -26,6 +26,7 @@ interface UpdateUserData {
   readonly policyId?: string;
   readonly telegramId?: string | null;
   readonly whatsappJid?: string | null;
+  readonly mqttPeerInstanceId?: string | null;
 }
 
 @Injectable()
@@ -63,6 +64,10 @@ export class UserRepository {
 
   async findByWhatsappJid(whatsappJid: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { whatsappJid } });
+  }
+
+  async findByMqttPeerInstanceId(mqttPeerInstanceId: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { mqttPeerInstanceId } });
   }
 
   async findByPolicyId(
@@ -111,6 +116,9 @@ export class UserRepository {
           ...(data.policyId !== undefined ? { policyId: data.policyId } : {}),
           ...(data.telegramId !== undefined ? { telegramId: data.telegramId } : {}),
           ...(data.whatsappJid !== undefined ? { whatsappJid: data.whatsappJid } : {}),
+          ...(data.mqttPeerInstanceId !== undefined
+            ? { mqttPeerInstanceId: data.mqttPeerInstanceId }
+            : {}),
         },
       });
     } catch (error: unknown) {

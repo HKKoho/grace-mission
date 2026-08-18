@@ -38,6 +38,11 @@ export const updateUserSchema = z.object({
   department: departmentSchema.optional(),
   isActive: z.boolean().optional(),
   policyId: z.string().cuid().optional(),
+  // Links this user to a peer instance for MQTT federation. Admin-only
+  // (unlike telegramId/whatsappJid, which users self-link) because it grants
+  // a whole remote instance the ability to drive this user's agent — a bigger
+  // trust decision than linking your own external chat account.
+  mqttPeerInstanceId: z.string().min(1).max(255).nullable().optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
