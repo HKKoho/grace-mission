@@ -1,0 +1,534 @@
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { Injectable } from '@nestjs/common';
+import { createLogger } from '@clawix/shared';
+import type { ChatMessage } from '@clawix/shared';
+
+import { MemoryItemRepository } from '../db/memory-item.repository.js';
+import { BootstrapFileService } from './bootstrap-file.service.js';
+import { scanContextContent } from './prompt-injection-scanner.js';
+import { SkillLoaderService } from './skill-loader.service.js';
+import { PolicyRepository } from '../db/policy.repository.js';
+import { UserRepository } from '../db/user.repository.js';
+import { SystemSettingsService } from '../system-settings/system-settings.service.js';
+import { SessionRepository } from '../db/session.repository.js';
+import type {
+  ContextBuildParams,
+  SystemPromptArgs,
+  WorkerSummary,
+} from './context-builder.types.js';
+import {
+  MEMORY_FILE_TOKEN_BUDGET,
+  DAILY_NOTES_TOKEN_BUDGET,
+  DAILY_NOTES_DAYS,
+  MEMORY_ITEM_MAX_CHARS,
+} from './context-builder.types.js';
+
+const logger = createLogger('engine:context-builder');
+
+/**
+ * Builds enriched message arrays for LLM calls.
+ *
+ * Assembles:
+ *  - Enriched system prompt (agent identity + workspace + systemPrompt + memory)
+ *  - History messages (passed through)
+ *  - User message with runtime context prepended
+ */
+@Injectable()
+export class ContextBuilderService {
+  constructor(
+    private readonly memoryItemRepo: MemoryItemRepository,
+    private readonly bootstrapFileService: BootstrapFileService,
+    private readonly skillLoader: SkillLoaderService,
+    private readonly policyRepo: PolicyRepository,
+    private readonly userRepo: UserRepository,
+    private readonly systemSettingsService: SystemSettingsService,
+    private readonly sessionRepo: SessionRepository,
+  ) {}
+
+  /**
+   * Build the complete message array for an LLM call.
+   */
+  async buildMessages(params: ContextBuildParams): Promise<readonly ChatMessage[]> {
+    const { agentDef, history, input, userId, isSubAgent, isScheduledTask } = params;
+    const channel = params.channel ?? 'internal';
+    const chatId = params.chatId ?? 'system';
+    const userName = params.userName ?? 'System';
+
+    // chatId format for cron firings is 'cron:<taskId>' (set by CronTaskProcessorService)
+    const taskId = isScheduledTask && chatId.startsWith('cron:') ? chatId.slice(5) : undefined;
+
+    const systemPrompt = await this.buildSystemPrompt({
+      agentDef,
+      userId,
+      workspacePath: params.workspacePath,
+      isSubAgent,
+      isScheduledTask,
+      workers: params.workers,
+      taskId,
+      session: params.session,
+    });
+    const userContent = await this.buildUserMessage(
+      input,
+      channel,
+      chatId,
+      userName,
+      params.replyContext,
+    );
+
+    const systemMessage: ChatMessage = { role: 'system', content: systemPrompt };
+    const userMessage: ChatMessage = { role: 'user', content: userContent };
+
+    return [systemMessage, ...history, userMessage];
+  }
+
+  private async buildSystemPrompt(args: SystemPromptArgs): Promise<string> {
+    if (args.session !== undefined) {
+      if (args.session.cachedSystemPrompt !== null) {
+        return args.session.cachedSystemPrompt;
+      }
+      const rendered = await this.renderSystemPrompt(args);
+      try {
+        await this.sessionRepo.setCachedSystemPrompt(args.session.id, rendered);
+      } catch (err) {
+        logger.warn(
+          { sessionId: args.session.id, err },
+          'Failed to persist cached system prompt — continuing with rendered output',
+        );
+      }
+      return rendered;
+    }
+    return this.renderSystemPrompt(args);
+  }
+
+  private async renderSystemPrompt(args: SystemPromptArgs): Promise<string> {
+    const { agentDef, userId, workspacePath, isSubAgent, isScheduledTask, workers, taskId } = args;
+    const sections: string[] = [];
+
+    if (isSubAgent) {
+      // Sub-agent: focused framing, no bootstrap files
+      sections.push(this.buildSubAgentIdentitySection(agentDef));
+    } else {
+      // 1. Agent identity
+      sections.push(this.buildIdentitySection(agentDef));
+
+      // 2. Bootstrap files (only for primary agents with a workspace)
+      if (workspacePath) {
+        const bootstrapSections = await this.bootstrapFileService.loadBootstrapFiles(workspacePath);
+        for (const section of bootstrapSections) {
+          sections.push(`## ${section.filename}\n\n${section.content}`);
+        }
+      }
+    }
+
+    // 3. Workspace awareness (only when workspace is mounted)
+    if (workspacePath) {
+      sections.push(this.buildWorkspaceSection());
+    }
+
+    // 4. Agent-defined system prompt
+    sections.push(agentDef.systemPrompt);
+
+    // 5. Operating principles — baseline discipline that applies to all agents.
+    // Sub-agents only get the Tool Use paragraph; Memory and Skills are
+    // primary-only because sub-agents rarely save memory and skill access is
+    // gated below.
+    sections.push(this.buildOperatingPrinciplesSection(Boolean(isSubAgent)));
+
+    // 6. Available sub-agents (primary agents only)
+    if (!isSubAgent && workers && workers.length > 0) {
+      sections.push(this.buildWorkersSection(workers));
+    }
+
+    // 6. Skills summary (primary agents only — sub-agents are focused on a single
+    // task and don't need the full skill index, which would waste prompt tokens.)
+    if (!isSubAgent) {
+      const customDir = workspacePath ? path.join(workspacePath, 'skills') : '';
+      const allowedDirNames = agentDef.skillIds?.length ? agentDef.skillIds : undefined;
+      const skillsSummary = await this.skillLoader.buildSkillsSummary(customDir, allowedDirNames);
+      if (skillsSummary) {
+        sections.push(
+          '# Skills\n\n' +
+            'Skills are NOT agents — do NOT use the spawn tool for skills.\n' +
+            'To use a skill: call read_file on its SKILL.md location, then follow the instructions inside.\n' +
+            'To create new skills: write them under /workspace/skills/ (writable, lives inside your workspace). /skills/builtin/ is read-only.\n\n' +
+            skillsSummary,
+        );
+      }
+    }
+
+    // 7. Execution Context (when running as a scheduled task)
+    const executionSection = this.buildExecutionContextSection(Boolean(isScheduledTask), taskId);
+    if (executionSection) {
+      sections.push(executionSection);
+    }
+
+    // 8. Cron/scheduling guidance (only if policy allows)
+    if (!isSubAgent) {
+      const cronSection = await this.buildCronSection(userId);
+      if (cronSection) {
+        sections.push(cronSection);
+      }
+    }
+
+    // 9. Memory (optional)
+    const memorySection = await this.buildMemorySection(userId, workspacePath);
+    if (memorySection) {
+      sections.push(memorySection);
+    }
+
+    return sections.join('\n\n---\n\n');
+  }
+
+  private buildOperatingPrinciplesSection(isSubAgent: boolean): string {
+    const paragraphs = [
+      '# Operating Principles',
+      '',
+      '**Tool use.** When you say you will do something, execute the tool call in the same response — never end a turn with a promise of future action. Keep working until the task is complete; verify the result before declaring done. Prefer tools over mental computation: arithmetic, current time, file contents, and web facts come from tools, not memory. When a question has an obvious default interpretation, act on it; only clarify when ambiguity genuinely changes which tool you would call.',
+    ];
+
+    if (!isSubAgent) {
+      paragraphs.push(
+        '',
+        "**Skills.** Before replying, scan available skills. If any is even partially relevant, load its SKILL.md and follow it — skills encode the user's preferred conventions and quality standards, not just shortcuts. After a complex task (5+ tool calls) or a non-obvious workflow you discovered, offer to save it as a skill so it is reusable next time.",
+      );
+    }
+
+    return paragraphs.join('\n');
+  }
+
+  private buildWorkersSection(workers: readonly WorkerSummary[]): string {
+    const lines = [
+      '# Available Sub-Agents',
+      '',
+      'You can delegate tasks to these specialized agents using the spawn tool:',
+      '',
+    ];
+
+    for (const w of workers) {
+      if (w.description) {
+        lines.push(`- **${w.name}**: ${w.description}`);
+      } else {
+        lines.push(`- **${w.name}**`);
+      }
+    }
+
+    lines.push(
+      '',
+      'To spawn a named agent: spawn(agent_name="<name>", prompt="<task>")',
+      'If none of these agents fit your needs, spawn an anonymous agent: spawn(prompt="<task>")',
+    );
+
+    return lines.join('\n');
+  }
+
+  private buildSubAgentIdentitySection(agentDef: ContextBuildParams['agentDef']): string {
+    const parts = [
+      '# Sub-Agent',
+      '',
+      'You are a sub-agent spawned by the main agent to complete a specific task.',
+      'Stay focused on the assigned task. Do not deviate into unrelated work.',
+      'Your final response will be reported back to the main agent.',
+    ];
+
+    if (agentDef.name) {
+      parts.push('', `Agent type: ${agentDef.name}`);
+    }
+    if (agentDef.description) {
+      parts.push(`Role: ${agentDef.description}`);
+    }
+
+    return parts.join('\n');
+  }
+
+  private buildIdentitySection(agentDef: ContextBuildParams['agentDef']): string {
+    const parts = [`# ${agentDef.name}`];
+    if (agentDef.description) {
+      parts.push(agentDef.description);
+    }
+    return parts.join('\n\n');
+  }
+
+  private buildWorkspaceSection(): string {
+    return [
+      '## Workspace',
+      '',
+      'Your workspace is at: /workspace',
+      '- Use the read_file, write_file, edit_file, list_directory, and shell tools to interact with files.',
+      '- All file paths must be under /workspace.',
+      '',
+      '## Container Environment',
+      '',
+      'You run inside an isolated container with:',
+      '- **Python 3.12** (stdlib only — no pip packages pre-installed, no pip install available)',
+      '- **git**, **jq** available in shell',
+      '- **No direct internet access** — curl, wget, and network commands will fail',
+      '',
+      'To access the internet, use ONLY the **web_search** and **web_fetch** tools.',
+      'Never write scripts that make HTTP requests — use these tools directly instead.',
+      'When writing Python scripts, use only the standard library (json, csv, os, re, etc.).',
+      'If a user asks for a script requiring external packages, write it but note they must run it outside the container.',
+      '',
+      '## Skills',
+      '',
+      '**ALWAYS use the skill-creator skill when creating or updating skills.**',
+      'Before any skill creation task: read_file("/skills/builtin/skill-creator/SKILL.md") for the required format.',
+      'Skills MUST have YAML frontmatter with `name` and `description` fields — skills without valid frontmatter will not load.',
+      '',
+      '## Projector',
+      '',
+      'You can create interactive tools for the user as projector items (calculators, converters, editors, visualizers).',
+      '**Before any projector task**: read_file("/skills/builtin/projector-creator/SKILL.md") for the workflow and guidelines.',
+      'Projectors run in sandboxed iframes with NO network access — fetch data yourself first if needed.',
+      '',
+      '## Time Limits',
+      '',
+      'Each agent run has a wall-clock timeout (default 5 minutes).',
+      'If a task might take longer, break it into smaller steps or use cron scheduling for recurring work.',
+      'Do not attempt more than 3 web_fetch calls in a single run — fetch only the most relevant URLs.',
+      '',
+      '## Memory',
+      '',
+      'You have two long-term memory files — keep them separate, do not duplicate facts between them:',
+      '- `/workspace/USER.md` — structured user profile (name, timezone, role, preferences, work context). Update with `edit_file` when you learn a new structured fact about the user.',
+      '- `/workspace/memory/MEMORY.md` — free-form long-term notes about ongoing work, decisions, and project context. Do NOT write user-profile facts here; they belong in USER.md.',
+      '',
+      'For both files: read to recall context from previous sessions; keep them concise and well-organized — you own them completely.',
+      '',
+      'For daily activity notes, use `save_memory` with a `daily:YYYY-MM-DD` tag (e.g., `daily:' +
+        new Date().toISOString().slice(0, 10) +
+        '`).',
+      '- The last 3 days of daily notes are automatically loaded into your context',
+      '- Use `search_memory` to look up older daily notes or tagged memories',
+      '',
+      'Your available memory tags are listed in the Memory section of your context.',
+      'Use `search_memory` with specific tags to retrieve their content.',
+      '',
+      'When writing entries to USER.md, MEMORY.md, or `save_memory`, write declarative facts, not instructions: "User prefers concise responses" ✓ — "Always respond concisely" ✗. Imperative phrasing gets re-read as a directive in later sessions and can override the user\'s current request.',
+    ].join('\n');
+  }
+
+  private async buildCronSection(userId: string): Promise<string | null> {
+    try {
+      const user = await this.userRepo.findById(userId);
+      const policy = await this.policyRepo.findById(user.policyId);
+      if (!policy.cronEnabled) return null;
+    } catch {
+      return null;
+    }
+
+    return [
+      '# Scheduled Tasks (Cron)',
+      '',
+      'You can create, list, and remove scheduled tasks using the **cron** tool.',
+      'When a scheduled task triggers, a full agent session starts with your prompt — you will be activated to do the work.',
+      'Results are automatically delivered back to the channel where the job was created.',
+      '',
+      '## Schedule Types',
+      '- **Recurring interval**: `{"type":"every","interval":"5m"}` — runs every 5 minutes. Units: s, m, h, d.',
+      '- **Cron expression**: `{"type":"cron","expression":"0 9 * * MON-FRI","tz":"America/New_York"}` — standard cron syntax with optional timezone.',
+      '- **One-time**: `{"type":"at","time":"2026-04-01T09:00:00Z"}` — runs once at the specified time, then auto-disables.',
+      '',
+      '## Rules',
+      '- The schedule parameter must be a JSON string.',
+      '- You can only receive messages from supported channels: Telegram, Slack, WhatsApp, and Web.',
+      '- You cannot create, modify, or delete cron jobs while running inside a scheduled task.',
+      '',
+      "If the user references output from a prior scheduled task, use `action:'runs'`",
+      "to locate the job and `action:'runDetail'` with the `runId` to retrieve the full",
+      'transcript of what was done. Scheduled-task output is not part of this',
+      "conversation's history.",
+    ].join('\n');
+  }
+
+  private buildExecutionContextSection(isScheduledTask: boolean, taskId?: string): string | null {
+    if (!isScheduledTask) return null;
+
+    const lines = [
+      '# Execution Context',
+      '',
+      taskId
+        ? `You are running as scheduled task \`${taskId}\`. The user is not present and cannot respond.`
+        : 'You are running as a scheduled task. The user is not present and cannot respond.',
+      'Produce a self-contained result. Do not ask clarifying questions or invite follow-up.',
+      "The user's prompt is the deliverable. Saving or reading notes is a side-effect, never a substitute for the requested output. If you only acknowledge a memory operation, you have failed the task.",
+    ];
+
+    if (taskId) {
+      lines.push(
+        '',
+        '## Persistent Notes (optional)',
+        '',
+        `A folder at \`/workspace/memory/cron/${taskId}/\` persists across runs of this task. Use it only when continuity across runs would meaningfully improve your output — for example:`,
+        '',
+        '- avoiding repetition (e.g. not repeating a joke or example from a prior run)',
+        '- tracking progress through a multi-run task',
+        "- building on a prior run's findings",
+        '',
+        "To recall prior notes, `read_file` on a stable filename you've used before (e.g. `notes.md`, `used_jokes.md`). If the file doesn't exist, that means no prior notes for this task — proceed normally; do not treat the error as a problem. To save, `write_file` to a path under the folder above; parent directories are created automatically. Avoid `list_directory` on this folder — it errors when nothing has been saved yet, and the error suffix can derail you. Most one-shot tasks need neither read nor write — ignore the folder when continuity isn't relevant.",
+        '',
+        'Prefer this folder over `save_memory` or `MEMORY.md` for task-specific breadcrumbs — those are user-wide and can leak into unrelated conversations. Use them only when the note is genuinely about the user or applies beyond this task.',
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  private async buildMemorySection(userId: string, workspacePath?: string): Promise<string | null> {
+    const sections: string[] = [];
+
+    // 1. MEMORY.md — read from workspace
+    if (workspacePath) {
+      try {
+        const memoryFilePath = path.join(workspacePath, 'memory', 'MEMORY.md');
+        const content = await fs.readFile(memoryFilePath, 'utf-8');
+        const trimmed = content.trim();
+        if (trimmed) {
+          const scanned = scanContextContent(trimmed, 'MEMORY.md').sanitized;
+          const truncated = truncate(scanned, MEMORY_FILE_TOKEN_BUDGET * 4);
+          sections.push(`## Long-term Memory\n\n${truncated}`);
+        }
+      } catch {
+        // File doesn't exist or unreadable — skip
+      }
+    }
+
+    // 2. Daily notes — last N days
+    try {
+      const dailyItems = await this.memoryItemRepo.findDailyNotes(userId, DAILY_NOTES_DAYS);
+      if (dailyItems.length > 0) {
+        const grouped = this.groupDailyNotesByDate(dailyItems);
+        let tokenEstimate = 0;
+        const dateLines: string[] = [];
+
+        for (const [date, items] of grouped) {
+          const dateSectionLines = [`### ${date}`];
+          for (const item of items) {
+            const text = formatMemoryItem(item.content);
+            const tokens = Math.ceil(text.length / 4);
+            if (tokenEstimate + tokens > DAILY_NOTES_TOKEN_BUDGET) break;
+            dateSectionLines.push(`- ${text}`);
+            tokenEstimate += tokens;
+          }
+          dateLines.push(dateSectionLines.join('\n'));
+          if (tokenEstimate >= DAILY_NOTES_TOKEN_BUDGET) break;
+        }
+
+        if (dateLines.length > 0) {
+          sections.push(`## Recent Activity\n\n${dateLines.join('\n\n')}`);
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.warn({ userId, error: message }, 'Failed to load daily notes');
+    }
+
+    // 3. Tag index
+    try {
+      const tags = await this.memoryItemRepo.findDistinctTags(userId);
+      if (tags.length > 0) {
+        sections.push(`## Available Memory Tags\n\n${tags.join(', ')}`);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.warn({ userId, error: message }, 'Failed to load tag index');
+    }
+
+    if (sections.length === 0) return null;
+    const guidance =
+      'The information below reflects memory at the start of this session. ' +
+      'To check the current state of memory (including entries saved during this conversation), use the `search_memory` tool.';
+    return `# Memory\n\n${guidance}\n\n${sections.join('\n\n')}`;
+  }
+
+  private groupDailyNotesByDate(
+    items: readonly { content: unknown; tags: readonly string[]; createdAt: Date }[],
+  ): Map<string, readonly { content: unknown }[]> {
+    const grouped = new Map<string, { content: unknown }[]>();
+    for (const item of items) {
+      const dailyTag = item.tags.find((t) => t.startsWith('daily:'));
+      const date = dailyTag ? dailyTag.slice(6) : item.createdAt.toISOString().slice(0, 10);
+      const existing = grouped.get(date) ?? [];
+      existing.push(item);
+      grouped.set(date, existing);
+    }
+    return new Map([...grouped.entries()].sort((a, b) => b[0].localeCompare(a[0])));
+  }
+
+  private async buildUserMessage(
+    input: string,
+    channel: string,
+    chatId: string,
+    userName: string,
+    replyContext?: ContextBuildParams['replyContext'],
+  ): Promise<string> {
+    const now = new Date();
+    const { defaultTimezone } = await this.systemSettingsService.get();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: defaultTimezone,
+      weekday: 'long',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    const dayName = get('weekday');
+    const dateStr = `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;
+    const tz = defaultTimezone;
+
+    const runtimeContext = [
+      '[Runtime Context]',
+      `Server Time: ${dateStr} (${dayName}) (${tz})`,
+      `Channel: ${channel}`,
+      `Chat ID: ${chatId}`,
+      `User: ${userName}`,
+    ].join('\n');
+
+    if (!replyContext) {
+      return `${runtimeContext}\n\n${input}`;
+    }
+
+    const replyContextLines = [
+      '[Reply Context]',
+      `Original Sender ID: ${replyContext.from?.id ?? 'unknown'}`,
+      `Original Sender Is Bot: ${replyContext.from?.isBot ?? false}`,
+      `Original Message: ${replyContext.text}`,
+    ].join('\n');
+
+    return `${runtimeContext}\n\n${replyContextLines}\n\n${input}`;
+  }
+}
+
+/**
+ * Format a MemoryItem's JSON content as a human-readable string.
+ *
+ * - string → use directly
+ * - object with `text` field → use text
+ * - otherwise → JSON.stringify, truncated to MEMORY_ITEM_MAX_CHARS
+ */
+function formatMemoryItem(content: unknown): string {
+  if (typeof content === 'string') {
+    return truncate(content, MEMORY_ITEM_MAX_CHARS);
+  }
+
+  if (content !== null && typeof content === 'object' && !Array.isArray(content)) {
+    const obj = content as Record<string, unknown>;
+    if (typeof obj['text'] === 'string') {
+      return truncate(obj['text'], MEMORY_ITEM_MAX_CHARS);
+    }
+  }
+
+  const serialized = JSON.stringify(content);
+  return truncate(serialized, MEMORY_ITEM_MAX_CHARS);
+}
+
+function truncate(str: string, maxLength: number): string {
+  if (str.length <= maxLength) {
+    return str;
+  }
+  return `${str.slice(0, maxLength)}...`;
+}

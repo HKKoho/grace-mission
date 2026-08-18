@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} — Console</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a14; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 12px 24px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .header h1 { font-size: 15px; color: #fff; }
+  .header h1 span { color: #e94560; }
+  .header .tag { font-size: 10px; background: #2a2a4a; border-radius: 4px; padding: 2px 8px; color: #888; letter-spacing: 0.04em; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; border: 1.5px solid #555; margin-left: auto; transition: all 0.4s; }
+  .status-dot.running { background: #4ade80; border-color: #4ade80; box-shadow: 0 0 8px #4ade80; }
+
+  .body { flex: 1; display: flex; overflow: hidden; }
+
+  .game-pane { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 20px; background: #0f0f1a; border-right: 1px solid #2a2a4a; }
+  .game-frame { border: 1px solid #2a2a4a; border-radius: 8px; overflow: hidden; box-shadow: 0 0 40px rgba(233,69,96,0.07); }
+  .game-frame iframe { display: block; border: none; }
+
+  .info-pane { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 22px; min-width: 220px; max-width: 300px; }
+
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #444; text-transform: uppercase; margin-bottom: 8px; }
+
+  .premise { color: #999; font-size: 12px; line-height: 1.65; }
+  .verse { color: #e94560; font-style: italic; font-size: 12px; line-height: 1.5; margin-top: 10px; border-left: 2px solid rgba(233,69,96,0.3); padding-left: 10px; }
+
+  .panel-list { display: flex; flex-direction: column; gap: 4px; }
+  .panel-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 6px; border: 1px solid transparent; transition: background 0.3s, border-color 0.3s; }
+  .panel-item.active { background: rgba(233,69,96,0.07); border-color: rgba(233,69,96,0.25); }
+  .panel-item.done { opacity: 0.35; }
+  .panel-dot { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; background: #1e1e2e; border: 1.5px solid #3a3a5a; margin-top: 4px; transition: all 0.3s; }
+  .panel-item.active .panel-dot { background: #e94560; border-color: #e94560; box-shadow: 0 0 6px #e94560; }
+  .panel-item.done .panel-dot { background: #2a2a4a; border-color: #2a2a4a; }
+  .panel-title { font-size: 12px; color: #ccc; font-weight: 500; }
+  .panel-emotion { font-size: 11px; color: #555; margin-top: 1px; }
+  .panel-item.active .panel-emotion { color: rgba(233,69,96,0.7); }
+
+  .arc-row { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; }
+  .arc-beat { font-size: 10px; color: #383848; padding: 1px 0; transition: color 0.3s; }
+  .arc-beat.reached { color: #666; }
+  .arc-beat.current { color: #e94560; font-weight: 700; }
+  .arc-sep { font-size: 9px; color: #2a2a3a; margin: 0 4px; }
+
+  .end-card { background: rgba(233,69,96,0.05); border: 1px solid rgba(233,69,96,0.18); border-radius: 8px; padding: 14px; display: none; }
+  .end-card.visible { display: block; }
+  .end-card-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #e94560; text-transform: uppercase; margin-bottom: 6px; }
+  .end-card-text { font-size: 12px; color: #aaa; line-height: 1.65; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>{{TITLE}}</span> — Console</h1>
+  <span class="tag">Facilitator View</span>
+  <div class="status-dot" id="statusDot"></div>
+</div>
+
+<div class="body">
+  <div class="game-pane">
+    <div class="game-frame">
+      <iframe id="gameFrame" src="./index.html" width="800" height="500"
+        sandbox="allow-scripts allow-same-origin" title="{{TITLE}}"></iframe>
+    </div>
+  </div>
+
+  <div class="info-pane">
+
+    <div>
+      <div class="section-label">About this game</div>
+      <p class="premise">{{PREMISE}}</p>
+      <p class="verse">{{OPENING_VERSE}}</p>
+    </div>
+
+    <div>
+      <div class="section-label">Scene progress</div>
+      <div class="panel-list" id="panelList"></div>
+    </div>
+
+    <div>
+      <div class="section-label">Emotional arc</div>
+      <div class="arc-row" id="arcRow"></div>
+    </div>
+
+    <div class="end-card" id="endCard">
+      <div class="end-card-label">Carry forward</div>
+      <p class="end-card-text">{{CARRY_FORWARD_LINE}}</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Injected by Spawn #4 — values come directly from the approved storyboard.
+  const PANELS = {{PANELS_JSON}};
+  const ARC    = {{ARC_JSON}};
+
+  let activePanelIndex = -1;
+  let arcReachedIndex  = -1;
+
+  // Build panel list
+  const panelList = document.getElementById('panelList');
+  PANELS.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'panel-item';
+    item.id = `panel-${i}`;
+    item.innerHTML =
+      `<div class="panel-dot"></div>` +
+      `<div><div class="panel-title">${p.title}</div>` +
+      `<div class="panel-emotion">${p.emotionalTarget}</div></div>`;
+    panelList.appendChild(item);
+  });
+
+  // Build arc row
+  const arcRow = document.getElementById('arcRow');
+  ARC.forEach((beat, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'arc-sep';
+      sep.textContent = '→';
+      arcRow.appendChild(sep);
+    }
+    const el = document.createElement('span');
+    el.className = 'arc-beat';
+    el.id = `arc-${i}`;
+    el.textContent = beat.stage;
+    arcRow.appendChild(el);
+  });
+
+  function activatePanel(index) {
+    if (index === activePanelIndex) return;
+    PANELS.forEach((_, i) => {
+      const el = document.getElementById(`panel-${i}`);
+      if (!el) return;
+      el.classList.remove('active', 'done');
+      if (i < index) el.classList.add('done');
+      else if (i === index) el.classList.add('active');
+    });
+
+    // Map panel index proportionally to an arc beat
+    const arcIndex = Math.min(
+      Math.floor((index / Math.max(PANELS.length - 1, 1)) * (ARC.length - 1)),
+      ARC.length - 1
+    );
+    if (arcIndex !== arcReachedIndex) {
+      for (let i = 0; i <= arcIndex; i++) {
+        const el = document.getElementById(`arc-${i}`);
+        if (el) el.className = 'arc-beat ' + (i === arcIndex ? 'current' : 'reached');
+      }
+      arcReachedIndex = arcIndex;
+    }
+
+    activePanelIndex = index;
+  }
+
+  // postMessage bridge — receives events from the game iframe
+  window.addEventListener('message', (e) => {
+    const msg = e.data;
+    if (!msg || typeof msg !== 'object') return;
+    switch (msg.type) {
+      case 'game:start':
+        document.getElementById('statusDot').classList.add('running');
+        activatePanel(0);
+        break;
+      case 'game:panel':
+        if (typeof msg.panelIndex === 'number') activatePanel(msg.panelIndex);
+        break;
+      case 'game:end':
+        document.getElementById('statusDot').classList.remove('running');
+        document.getElementById('endCard').classList.add('visible');
+        PANELS.forEach((_, i) => {
+          const el = document.getElementById(`panel-${i}`);
+          if (el) { el.classList.remove('active'); el.classList.add('done'); }
+        });
+        // Mark arc fully reached
+        ARC.forEach((_, i) => {
+          const el = document.getElementById(`arc-${i}`);
+          if (el) el.className = 'arc-beat reached';
+        });
+        break;
+    }
+  });
+</script>
+</body>
+</html>

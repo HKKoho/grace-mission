@@ -1,0 +1,50 @@
+═══════════════════════════════════════════════════════════════
+  Railway Environment Variables — API service
+═══════════════════════════════════════════════════════════════
+
+AUTOMATICALLY INJECTED by Railway plugins
+──────────────────────────────────────────
+DATABASE_URL          Injected by Postgres plugin
+REDIS_URL             Injected by Redis plugin
+
+REQUIRED — set manually in Railway dashboard
+─────────────────────────────────────────────
+NODE_ENV=production
+JWT_SECRET=<random 64-char string>
+PROVIDER_ENCRYPTION_KEY=<64 hex chars — openssl rand -hex 32>
+CORS_ALLOWED_ORIGINS=https://<web-service>.railway.app
+
+INITIAL_ADMIN_EMAIL=<your email>
+INITIAL_ADMIN_PASSWORD=<strong password>
+INITIAL_ADMIN_NAME=<your name>
+
+DEFAULT_PROVIDER=openai
+DEFAULT_LLM_MODEL=gpt-4o
+
+WORKSPACE_BASE_PATH=/data
+WORKSPACE_HOST_BASE_PATH=/data
+SKILLS_BUILTIN_DIR=/app/skills/builtin
+SKILLS_BUILTIN_HOST_DIR=/app/skills/builtin
+SKILLS_CUSTOM_DIR=/app/skills/custom
+SKILLS_CUSTOM_HOST_DIR=/app/skills/custom
+
+REMOTE DOCKER (VPS agent runner) — output by vps-setup.sh
+───────────────────────────────────────────────────────────
+DOCKER_HOST=tcp://<VPS_IP>:2376
+DOCKER_TLS_VERIFY=1
+DOCKER_CA_CERT=<base64-encoded ca.pem>
+DOCKER_CLIENT_CERT=<base64-encoded cert.pem>
+DOCKER_CLIENT_KEY=<base64-encoded key.pem>
+
+OPTIONAL CHANNELS — add only if you use these
+───────────────────────────────────────────────
+TELEGRAM_BOT_TOKEN=...
+WHATSAPP_AUTH_DIR=/data/whatsapp-auth
+
+═══════════════════════════════════════════════════════════════
+  Railway Environment Variables — Web service
+═══════════════════════════════════════════════════════════════
+
+NEXT_PUBLIC_API_URL=https://<api-service>.railway.app
+NEXT_PUBLIC_WS_URL=wss://<api-service>.railway.app
+NODE_ENV=production

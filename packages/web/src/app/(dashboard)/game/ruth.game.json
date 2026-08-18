@@ -1,0 +1,148 @@
+{
+  "id": "ruth-journey",
+  "title": "The Journey of Ruth",
+  "subtitle": "A board game of loyalty, harvest, and redemption",
+  "description": "Follow Ruth, Naomi, Boaz, and Orpah through the fields of Bethlehem. Collect grain, show kindness, and be the first to reach the City Gate.",
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "dice": { "count": 1, "sides": 6 },
+  "resources": ["grain", "kindness"],
+  "winCondition": { "type": "reachSpace", "spaceId": 23 },
+  "board": {
+    "path": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],
+    "spaces": [
+      { "id": 0,  "label": "Moab",              "type": "start" },
+      { "id": 1,  "label": "Road to Judah",     "type": "safe" },
+      { "id": 2,  "label": "Crossroads",        "type": "event",     "cardId": "crossroads" },
+      { "id": 3,  "label": "Open Road",         "type": "safe" },
+      { "id": 4,  "label": "Border of Judah",   "type": "blessing",  "cardId": "blessing_border" },
+      { "id": 5,  "label": "Dusty Path",        "type": "safe" },
+      { "id": 6,  "label": "Field Edge",        "type": "event",     "cardId": "field_edge" },
+      { "id": 7,  "label": "Gleaning Fields",   "type": "event",     "cardId": "glean1" },
+      { "id": 8,  "label": "Midday Heat",       "type": "challenge", "cardId": "heat" },
+      { "id": 9,  "label": "Boaz Notices",      "type": "blessing",  "cardId": "boaz_notices" },
+      { "id": 10, "label": "Water Jar",         "type": "event",     "cardId": "water_jar" },
+      { "id": 11, "label": "Shared Meal",       "type": "blessing",  "cardId": "shared_meal" },
+      { "id": 12, "label": "Afternoon Gleaning","type": "event",     "cardId": "glean2" },
+      { "id": 13, "label": "Evening Return",    "type": "safe" },
+      { "id": 14, "label": "Naomi's Counsel",   "type": "event",     "cardId": "naomi_counsel" },
+      { "id": 15, "label": "Threshing Floor",   "type": "event",     "cardId": "threshing" },
+      { "id": 16, "label": "Night Watch",       "type": "challenge", "cardId": "night_watch" },
+      { "id": 17, "label": "Morning Gift",      "type": "blessing",  "cardId": "morning_gift" },
+      { "id": 18, "label": "Return to Town",    "type": "safe" },
+      { "id": 19, "label": "Kinsman Redeemer",  "type": "event",     "cardId": "kinsman" },
+      { "id": 20, "label": "Sandal Exchange",   "type": "blessing",  "cardId": "sandal" },
+      { "id": 21, "label": "Elders Witness",    "type": "event",     "cardId": "elders" },
+      { "id": 22, "label": "City Square",       "type": "safe" },
+      { "id": 23, "label": "City Gate",         "type": "finish" }
+    ]
+  },
+  "cards": [
+    {
+      "id": "crossroads",
+      "title": "At the Crossroads",
+      "text": "Orpah turns back. You press on with courage. Move forward 1 space.",
+      "flavour": "\"Where you go I will go.\" — Ruth 1:16",
+      "effect": { "kind": "move", "spaces": 1 }
+    },
+    {
+      "id": "blessing_border",
+      "title": "Crossing Into Judah",
+      "text": "You arrive in a new land, trusting God's provision. Gain 1 kindness.",
+      "flavour": "May the Lord reward your faithfulness.",
+      "effect": { "kind": "resource", "resource": "kindness", "delta": 1 }
+    },
+    {
+      "id": "field_edge",
+      "title": "Seeking Permission",
+      "text": "You humbly ask to glean after the harvesters. Gain 2 grain.",
+      "effect": { "kind": "resource", "resource": "grain", "delta": 2 }
+    },
+    {
+      "id": "glean1",
+      "title": "Morning Gleaning",
+      "text": "The fields are generous. Gain 3 grain.",
+      "flavour": "She gleaned in the field until evening.",
+      "effect": { "kind": "resource", "resource": "grain", "delta": 3 }
+    },
+    {
+      "id": "heat",
+      "title": "Midday Sun",
+      "text": "The heat is fierce. You rest in the shade and lose a turn.",
+      "flavour": "She worked from morning until now.",
+      "effect": { "kind": "skip" }
+    },
+    {
+      "id": "boaz_notices",
+      "title": "Boaz Speaks",
+      "text": "\"The Lord repay you for what you have done.\" Gain 2 kindness.",
+      "flavour": "Boaz notices Ruth's loyalty to Naomi.",
+      "effect": { "kind": "resource", "resource": "kindness", "delta": 2 }
+    },
+    {
+      "id": "water_jar",
+      "title": "Drink from the Jar",
+      "text": "Boaz invites you to drink from the workers' water. Move forward 1.",
+      "effect": { "kind": "move", "spaces": 1 }
+    },
+    {
+      "id": "shared_meal",
+      "title": "Shared Bread",
+      "text": "You eat roasted grain with the harvesters. Gain 1 grain and 1 kindness.",
+      "flavour": "She ate until she was satisfied.",
+      "effect": { "kind": "resource", "resource": "grain", "delta": 1 }
+    },
+    {
+      "id": "glean2",
+      "title": "Afternoon Abundance",
+      "text": "Boaz tells the workers to leave extra grain for you. Gain 4 grain.",
+      "effect": { "kind": "resource", "resource": "grain", "delta": 4 }
+    },
+    {
+      "id": "naomi_counsel",
+      "title": "Naomi's Wisdom",
+      "text": "Naomi guides you toward redemption. Move forward 2 spaces.",
+      "flavour": "\"Wait, my daughter, until you learn how the matter turns out.\"",
+      "effect": { "kind": "move", "spaces": 2 }
+    },
+    {
+      "id": "threshing",
+      "title": "Threshing Floor",
+      "text": "You approach Boaz with humility. Gain 2 kindness.",
+      "effect": { "kind": "resource", "resource": "kindness", "delta": 2 }
+    },
+    {
+      "id": "night_watch",
+      "title": "Waiting in the Dark",
+      "text": "You wait patiently through the night. Skip your next turn.",
+      "effect": { "kind": "skip" }
+    },
+    {
+      "id": "morning_gift",
+      "title": "Six Measures of Barley",
+      "text": "Boaz sends you home with six measures. Gain 6 grain.",
+      "flavour": "\"Do not go back to your mother-in-law empty-handed.\"",
+      "effect": { "kind": "resource", "resource": "grain", "delta": 6 }
+    },
+    {
+      "id": "kinsman",
+      "title": "The Nearer Kinsman",
+      "text": "The closer relative declines to redeem. Move forward 1.",
+      "effect": { "kind": "move", "spaces": 1 }
+    },
+    {
+      "id": "sandal",
+      "title": "The Sandal Removed",
+      "text": "The legal transfer is complete. Move forward 1 and gain 1 kindness.",
+      "flavour": "The ancient custom of confirming a transaction in Israel.",
+      "effect": { "kind": "resource", "resource": "kindness", "delta": 1 }
+    },
+    {
+      "id": "elders",
+      "title": "Witnesses at the Gate",
+      "text": "The elders bless your union. Move forward 2.",
+      "flavour": "\"We are witnesses.\" — Ruth 4:11",
+      "effect": { "kind": "move", "spaces": 2 }
+    }
+  ]
+}

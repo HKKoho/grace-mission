@@ -1,0 +1,76 @@
+{
+  "name": "clawix",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r --parallel run dev",
+    "lint": "eslint . && pnpm run typecheck",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm --filter @clawix/shared build && pnpm --filter @clawix/api exec prisma generate && pnpm -r run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:prod:build": "docker compose -f docker-compose.prod.yml build",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
+    "install:clawix": "node scripts/install.mjs",
+    "update:clawix": "node scripts/update.mjs",
+    "uninstall:clawix": "node scripts/uninstall.mjs",
+    "db:migrate": "pnpm --filter @clawix/api exec prisma migrate dev && pnpm --filter @clawix/api exec prisma generate",
+    "db:seed": "pnpm --filter @clawix/api exec prisma db seed",
+    "db:reset": "pnpm --filter @clawix/api exec prisma migrate reset --force",
+    "db:studio": "pnpm --filter @clawix/api exec prisma studio",
+    "migrate:custom-skills": "tsx scripts/migrate-custom-skills.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/engines",
+      "protobufjs",
+      "@swc/core",
+      "@whiskeysockets/baileys",
+      "esbuild",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ],
+    "overrides": {
+      "fast-uri": ">=3.1.2",
+      "flatted": ">=3.4.0",
+      "defu": ">=6.1.7",
+      "path-to-regexp": ">=8.4.0",
+      "lodash": ">=4.18.0",
+      "picomatch": ">=4.0.4",
+      "hono": ">=4.12.21",
+      "@hono/node-server": ">=1.19.10",
+      "effect": ">=3.20.0",
+      "@google/genai>protobufjs": ">=7.5.8 <8.0.0",
+      "@whiskeysockets/baileys>protobufjs": ">=7.5.8 <8.0.0"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-import-x": "^4.6.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^4.1.0"
+  }
+}

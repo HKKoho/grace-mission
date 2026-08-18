@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; display: flex; flex-direction: column; }
+
+  .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 16px 24px; border-bottom: 1px solid #2a2a4a; }
+  .header h1 { font-size: 20px; color: #fff; }
+  .header h1 span { color: #e94560; }
+  .header .subtitle { color: #888; font-size: 12px; }
+
+  .stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
+  .game-wrap { position: relative; width: 800px; height: 500px; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px #2a2a4a; }
+
+  canvas { position: absolute; top: 0; left: 0; display: block; }
+  #game-canvas { background: #0f0f14; z-index: 1; }
+  #mood-overlay { z-index: 2; pointer-events: none; opacity: 0; transition: opacity 1s; }
+
+  .hud { position: absolute; top: 12px; left: 12px; z-index: 5; display: flex; gap: 12px; font-size: 13px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+  .hud .pill { background: rgba(15,15,26,0.6); border: 1px solid #2a2a4a; border-radius: 999px; padding: 4px 12px; }
+
+  .caption { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 5; max-width: 80%; text-align: center; background: rgba(15,15,26,0.75); border: 1px solid #2a2a4a; border-radius: 8px; padding: 10px 18px; font-size: 14px; color: #e0e0e0; opacity: 0; transition: opacity 0.6s; }
+  .caption.visible { opacity: 1; }
+
+  .overlay-screen { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; background: rgba(10,10,20,0.92); gap: 16px; }
+  .overlay-screen.hidden { display: none; }
+  .overlay-screen h2 { font-size: 24px; color: #fff; }
+  .overlay-screen .premise { max-width: 520px; color: #aaa; font-size: 14px; line-height: 1.6; }
+  .overlay-screen .verse { max-width: 480px; color: #e94560; font-style: italic; font-size: 14px; }
+
+  .btn { padding: 12px 28px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: #e94560; color: white; }
+  .btn-primary:hover { background: #ff6b81; }
+  .btn-secondary { background: #2a2a4a; color: #ccc; }
+  .btn-secondary:hover { background: #3a3a5a; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>{{TITLE}}</span></h1>
+  <div class="subtitle">{{SUBTITLE}}</div>
+</div>
+
+<div class="stage">
+  <div class="game-wrap" id="gameWrap">
+    <canvas id="game-canvas" width="800" height="500"></canvas>
+    <canvas id="mood-overlay" width="800" height="500"></canvas>
+
+    <div class="hud" id="hud">
+      <span class="pill" id="hudPanel">Scene 1</span>
+      <span class="pill" id="hudCoins" style="display:none">Coins: 0</span>
+    </div>
+
+    <div class="caption" id="caption"></div>
+
+    <div class="overlay-screen" id="startScreen">
+      <h2>{{TITLE}}</h2>
+      <p class="premise">{{PREMISE}}</p>
+      <p class="verse">{{OPENING_VERSE}}</p>
+      <button class="btn btn-primary" onclick="startGame()">Begin</button>
+    </div>
+
+    <div class="overlay-screen hidden" id="endScreen">
+      <h2 id="endTitle">The End</h2>
+      <p class="premise" id="endLine"></p>
+      <button class="btn btn-secondary" onclick="restartGame()">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // {{TITLE}} — JavaScript
+  // JAVASCRIPT GOES HERE
+
+  // Save to workspace helper — same bridge contract as the projector-creator skill.
+  function saveToWorkspace(filename, textContent) {
+    window.parent.postMessage({ type: 'projector:save', filename: filename, content: textContent, encoding: 'text' }, '*');
+  }
+</script>
+</body>
+</html>

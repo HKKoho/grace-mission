@@ -1,0 +1,54 @@
+Clawix for NGOs — Licensing Notice
+==================================
+
+This repository is licensed under TWO licenses. Which one applies depends on the
+file or directory.
+
+1. Core Clawix platform — MIT License
+-------------------------------------
+Copyright (c) 2026 ClawixAI
+
+Everything in this repository EXCEPT the NGO-specific components listed in
+section 2 below is licensed under the MIT License. See the LICENSE file at the
+repository root for the full text. You may use, modify, and distribute these
+parts — including commercially — under the MIT terms.
+
+2. NGO-specific components — PolyForm Noncommercial License 1.0.0
+-----------------------------------------------------------------
+Copyright 2026 Victorius Hung (aibyml-ngo)
+https://github.com/aibyml-ngo/clawix-ngo
+
+The following paths are licensed under the PolyForm Noncommercial License 1.0.0
+(https://polyformproject.org/licenses/noncommercial/1.0.0). They may be used
+only for noncommercial purposes. Note that the PolyForm Noncommercial license
+expressly permits use by charitable organizations, educational institutions,
+public research/health/safety organizations, environmental organizations, and
+government institutions — so NGOs and similar nonprofits may use them freely.
+
+  reference/Clawix SKILL and Agent/**     (NGO agents, skills, proposal, docs)
+  skills/ARIA/**                          (ARIA Foundation skill)
+  skills/builtin/aria-foundation/**       (ARIA Foundation builtin skill)
+  packages/web/src/app/(dashboard)/ngo/** (NGO dashboard pages)
+  packages/api/prisma/setup-ngo.ts        (NGO workspace seeding)
+  packages/api/prisma/seed-ngo-agents.ts  (NGO agent seeding)
+  scripts/setup-ngo.mjs                   (NGO workspace seeding)
+  scripts/seed-ngo-agents.mjs             (NGO agent seeding)
+
+The three directories above (reference/Clawix SKILL and Agent, skills/ARIA,
+skills/builtin/aria-foundation) each contain a copy of the full PolyForm
+Noncommercial License text in a local LICENSE file. The remaining NGO files in
+the list live inside otherwise-MIT-licensed packages but are nonetheless
+governed by the PolyForm Noncommercial License per this NOTICE.
+
+Precedence
+----------
+Where a directory contains its own LICENSE file, that file governs the contents
+of that directory. Everything else is governed by the root LICENSE (MIT), except
+the individually listed NGO files above, which are governed by the PolyForm
+Noncommercial License.
+
+Disclaimer
+----------
+This NOTICE describes the project maintainers' intended licensing. It is not
+legal advice. If commercial enforceability of the noncommercial terms matters to
+you, have this reviewed by a qualified attorney.
