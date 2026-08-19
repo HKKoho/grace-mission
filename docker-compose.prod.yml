@@ -58,6 +58,29 @@ services:
       timeout: 5s
       retries: 5
 
+  mosquitto:
+    build:
+      context: .
+      dockerfile: infra/docker/mosquitto/Dockerfile
+    image: grace-mosquitto:latest
+    container_name: grace-mosquitto
+    restart: unless-stopped
+    # Distinct host port from clawix-mqtt's own prod broker (127.0.0.1:1883),
+    # in case both ever run on this same host. Loopback-only.
+    ports:
+      - '127.0.0.1:1884:1883'
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:?MQTT_USERNAME is required}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD is required}
+      MQTT_PEER_CREDENTIALS: ${MQTT_PEER_CREDENTIALS:-}
+    volumes:
+      - mosquitto_data:/mosquitto/data
+    healthcheck:
+      test: ['CMD-SHELL', 'mosquitto_pub -h localhost -p 1883 -u "$$MQTT_USERNAME" -P "$$MQTT_PASSWORD" -t healthcheck -m ok -q 0']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -76,6 +99,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-clawix}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-clawix}?schema=public
       REDIS_URL: redis://redis:6379
       TTS_PIPER_URL: http://tts-piper:5001
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_INSTANCE_ID: ${MQTT_INSTANCE_ID:-grace-subscribe}
+      MQTT_USERNAME: ${MQTT_USERNAME:?MQTT_USERNAME is required}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD is required}
       PORT: '3003'
       HOST: '0.0.0.0'
       LOG_LEVEL: info
@@ -134,3 +161,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  mosquitto_data:

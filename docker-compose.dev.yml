@@ -94,11 +94,14 @@ services:
       SKILLS_BUILTIN_HOST_DIR: ${CLAWIX_HOST_SKILLS_DIR:-${PWD}/skills/builtin}
       SKILLS_CUSTOM_DIR: /app/skills/custom
       SKILLS_CUSTOM_HOST_DIR: ${CLAWIX_HOST_SKILLS_DIR:-${PWD}/skills/custom}
-      # Shared local dev broker running under the clawix-mqtt project
-      # (clawix-mosquitto, published on host port 1883). host.docker.internal
-      # reaches it without joining that project's network.
+      # clawix-mqtt's real prod broker (clawix-mosquitto), published on
+      # 127.0.0.1:1883. host.docker.internal reaches it without joining that
+      # project's network. Login is a dedicated peer credential — never
+      # clawix-subscribe's own — set via MQTT_PEER_CREDENTIALS in its .env.
       MQTT_BROKER_URL: mqtt://host.docker.internal:1883
       MQTT_INSTANCE_ID: grace-dev
+      MQTT_USERNAME: grace-dev
+      MQTT_PASSWORD: ${MQTT_DEV_PEER_PASSWORD:?MQTT_DEV_PEER_PASSWORD is required — the grace-dev login from clawix-mqtt's MQTT_PEER_CREDENTIALS}
     command: >
       sh -c "apt-get update && apt-get install -y --no-install-recommends docker.io && rm -rf /var/lib/apt/lists/* &&
              cp /app/pnpm-lock.yaml.host /app/pnpm-lock.yaml &&
